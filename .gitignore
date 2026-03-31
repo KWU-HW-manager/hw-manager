@@ -416,3 +416,32 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+bin/
+obj/
+
+# ASP.NET
+wwwroot/lib/
+appsettings.Development.json
+
+# DB 파일 (로컬 SQLite)
+*.db
+*.db-shm
+*.db-wal
+
+# 빌드 결과물
+*.exe
+*.dll
+*.pdb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 민감 정보
+*.pfx
+secrets.json
