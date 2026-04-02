@@ -1,0 +1,6 @@
+@HWManager.Server_HostAddress = http://localhost:5186
+
+GET {{HWManager.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
