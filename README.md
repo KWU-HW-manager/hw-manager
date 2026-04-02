@@ -1,29 +1,39 @@
-# [cite_start]HW-Manager: 실시간 PC자원 모니터링 및 최적화 시스템 [cite: 252, 253]
+# 💻 HW-Manager: 실시간 PC자원 모니터링 및 최적화 시스템
 
-[cite_start]광운대학교 응용소프트웨어실습 8조 팀 프로젝트입니다. [cite: 254]
-[cite_start]기존 작업 관리자의 한계를 보완하여 실시간 모니터링, 사용자 설정 기반 자동 최적화, 데이터 분석, 원격 모니터링 기능을 통합한 스마트 시스템입니다. [cite: 282]
-
-## [cite_start]👨‍💻 Team 8 Members [cite: 254]
-* [cite_start]**홍경택 (팀장)**: 하드웨어 자원 수집, 커스텀 기반 자원 관리 (임계값 알림) [cite: 255, 413, 414, 416]
-* [cite_start]**이윤성**: Windows Forms UI 설계, 실시간 그래프 시각화, Overlay UI [cite: 256, 417, 419, 420, 421]
-* [cite_start]**최상동**: 커스텀 자원 관리 (자동 제어), 프로세스 제어, 형상 관리 [cite: 257, 418, 422, 423, 426]
-* [cite_start]**조훈영**: SQLite + ADO.NET DB 구축, 통계 시각화, ASP.NET 웹 대시보드 [cite: 258, 427, 428, 429, 430]
-
-## [cite_start]🛠️ Tech Stack [cite: 389]
-* [cite_start]**Language**: C# [cite: 390]
-* [cite_start]**Desktop Client**: Windows Forms (.NET) [cite: 391]
-* [cite_start]**Web/Server**: ASP.NET Core [cite: 392]
-* [cite_start]**Database**: SQLite (ADO.NET) [cite: 393]
-* [cite_start]**IDE**: Visual Studio [cite: 395]
+광운대학교 응용소프트웨어실습 8조 팀 프로젝트입니다.
+기존 Windows 작업 관리자의 한계를 보완하여 실시간 모니터링, 사용자 설정 기반 자동 최적화, 데이터 분석, 그리고 원격 모니터링 기능을 통합한 스마트 시스템을 개발합니다.
 
 ## ✨ Core Features
-1. [cite_start]**실시간 하드웨어 모니터링**: CPU, RAM, GPU 사용량 통합 시각화 [cite: 328]
-2. [cite_start]**스마트 프로세스 제어**: 직관적인 프로세스 목록 제공 및 제어 [cite: 331]
-3. [cite_start]**커스텀 기반 자원 관리**: 사용자 설정 조건에 따른 프로세스 자동 제어 및 알림 [cite: 336, 337, 338]
-4. [cite_start]**자원 사용 이력 분석**: SQLite 기반 로그 저장 및 일간/주간 패턴 분석 [cite: 346, 347]
-5. [cite_start]**웹 대시보드 (원격 모니터링)**: 외부 기기에서 ASP.NET을 통한 PC 자원 상태 확인 [cite: 343]
+* **실시간 하드웨어 모니터링**: CPU, 메모리, GPU 등의 자원 사용량을 수집하고 통합 시각화
+* **스마트 프로세스 제어**: 직관적인 프로세스 목록 제공 및 개별 제어
+* **커스텀 기반 자원 관리 (Focus Mode)**: 임계값 기준 알림 및 사용자 설정 조건에 따른 프로세스 자동 제어/종료
+* **자원 사용 이력 분석**: SQLite 기반 로그 저장 및 일간/주간 사용 패턴 통계 시각화
+* **원격 웹 대시보드**: ASP.NET 기반 웹 페이지를 통해 외부 기기에서 PC 자원 상태 모니터링
+* **플로팅 위젯 (Overlay)**: 게임 및 전체 화면 환경을 위한 반투명 최소화 UI
+
+## 🛠️ Tech Stack
+* **Language**: C#
+* **UI Framework**: Windows Forms (.NET)
+* **Backend / Web**: ASP.NET Core
+* **Database**: SQLite (ADO.NET)
+* **IDE**: Visual Studio
+* **Version Control**: GitHub
+
+## 👨‍💻 Team 8 Members & Roles
+| 이름 | 주요 역할 및 담당 업무 |
+|:---:|---|
+| **홍경택**<br>(팀장) | • C# 기반 하드웨어 자원 수집 로직 구현 (CPU, RAM, GPU)<br>• 실시간 데이터 수집 로직 구현<br>• 커스텀 기반 자원 관리 기능 구현 (임계값 기준 알림 발생) |
+| **이윤성** | • Windows Forms 기반 UI 설계 및 화면 구성<br>• 실시간 자원 상태 그래프 시각화 기능 구현<br>• Overlay(플로팅 위젯) UI 구현 |
+| **최상동** | • 커스텀 기반 자원 관리 기능 구현 (프로세스 자동 제어 로직)<br>• C# 기반 프로세스 제어 기능 구현<br>• 사용자 프로필 기능 구현<br>• GitHub Repository 생성 및 형상 관리 |
+| **조훈영** | • SQLite + ADO.NET 기반 자원 로그 저장 기능 구현<br>• 통계 데이터 처리 및 시각화 화면 구현<br>• ASP.NET 기반 웹 대시보드 구현 |
 
 ## 📂 Project Structure
-* `HWManager.Client`: 모니터링 및 프로세스 제어를 담당하는 WinForms 데스크톱 애플리케이션
-* `HWManager.Server`: 자원 데이터를 수신하고 원격 뷰어를 제공하는 ASP.NET 웹 대시보드
-* `HWManager.Core`: 클라이언트와 서버가 공유하는 데이터 모델 및 DB 컨텍스트
+```text
+HW-Manager/
+│
+├── src/                         
+│   ├── HWManager.Client/        # [WinForms] 로컬 모니터링 UI 및 프로세스 제어 앱
+│   ├── HWManager.Server/        # [ASP.NET] 원격 대시보드 제공 및 외부 통신 웹 서버
+│   └── HWManager.Core/          # [ClassLib] 공통 데이터 모델 및 DB Context
+│
+└── docs/                        # 기획서, 제안서 및 결과 보고서 폴더
