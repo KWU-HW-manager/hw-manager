@@ -69,7 +69,7 @@
             // 
             pbGPU.Location = new Point(12, 233);
             pbGPU.Name = "pbGPU";
-            pbGPU.Size = new Size(100, 23);
+            pbGPU.Size = new Size(435, 23);
             pbGPU.Style = ProgressBarStyle.Continuous;
             pbGPU.TabIndex = 3;
             // 
@@ -77,7 +77,7 @@
             // 
             pbCPU.Location = new Point(12, 36);
             pbCPU.Name = "pbCPU";
-            pbCPU.Size = new Size(100, 23);
+            pbCPU.Size = new Size(435, 23);
             pbCPU.Style = ProgressBarStyle.Continuous;
             pbCPU.TabIndex = 4;
             // 
@@ -85,7 +85,7 @@
             // 
             pbRAM.Location = new Point(12, 137);
             pbRAM.Name = "pbRAM";
-            pbRAM.Size = new Size(100, 23);
+            pbRAM.Size = new Size(435, 23);
             pbRAM.Style = ProgressBarStyle.Continuous;
             pbRAM.TabIndex = 5;
             // 
