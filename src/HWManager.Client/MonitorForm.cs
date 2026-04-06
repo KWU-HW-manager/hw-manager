@@ -192,10 +192,5 @@ namespace HWManager.Client
             lblRAM.Text = $"RAM 사용량: {r:F1}%";
             lblGPU.Text = $"GPU 사용량: {g:F1}%";
         }
-
-        private void tableLayoutPanel1_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
     }
 }

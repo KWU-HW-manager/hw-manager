@@ -139,7 +139,6 @@
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel1.Size = new Size(800, 708);
             tableLayoutPanel1.TabIndex = 7;
-            tableLayoutPanel1.Paint += tableLayoutPanel1_Paint;
             // 
             // formsPlotGPU
             // 
