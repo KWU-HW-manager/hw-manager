@@ -12,17 +12,22 @@ namespace HWManager.Client
         private PerformanceCounter cpu = new PerformanceCounter("Processor", "% Processor Time", "_Total");
         private List<PerformanceCounter> gpus = new List<PerformanceCounter>();
         private ComputerInfo ram = new ComputerInfo();
+
         private double[] cpuData = new double[60]; // 60초 분량의 데이터 저장소
         private ScottPlot.Plottables.DataStreamer cpuStreamer; // 실시간 스트리밍 객체
+        private ScottPlot.Plottables.DataStreamer ramStreamer;
+        private ScottPlot.Plottables.DataStreamer gpuStreamer;
 
         public MonitorForm()
         {
             InitializeComponent();
             InitGpuCounters(); // GPU 카운터 초기설정
-            InitPlot();
+            InitPlotCPU();
+            InitPlotRAM();
+            InitPlotGPU();
         }
 
-        private void InitPlot()
+        private void InitPlotCPU()
         {
             // 1. 데이터 스트리머 생성 (60초 분량)
             cpuStreamer = formsPlotCPU.Plot.Add.DataStreamer(60);
@@ -52,6 +57,71 @@ namespace HWManager.Client
             // 6. 화면 새로고침
             formsPlotCPU.Refresh();
         }
+
+        private void InitPlotRAM()
+        {
+            // 1. RAM용 스트리머 생성 (60초 분량)
+            ramStreamer = formsPlotRAM.Plot.Add.DataStreamer(60);
+
+            // 2. 왼쪽으로 흐르는 뷰 설정
+            ramStreamer.ViewScrollLeft();
+
+            // 3. 초기 위치를 오른쪽 끝으로 보내기 위해 0으로 채움
+            for (int i = 0; i < 60; i++)
+            {
+                ramStreamer.Add(0);
+            }
+
+            // 4. X축 레이블 설정 (60 ~ 0)
+            double[] tickPositions = { 0, 10, 20, 30, 40, 50, 60 };
+            string[] tickLabels = { "60", "50", "40", "30", "20", "10", "0" };
+            formsPlotRAM.Plot.Axes.Bottom.SetTicks(tickPositions, tickLabels);
+            formsPlotRAM.Plot.Axes.Bottom.Label.Text = "Seconds Ago";
+
+            // 5. 선 스타일 (녹색) 및 축 범위 고정
+            ramStreamer.Color = ScottPlot.Color.FromColor(Color.Green);
+            ramStreamer.LineWidth = 2;
+            formsPlotRAM.Plot.Axes.SetLimits(0, 60, 0, 100);
+
+            // 6. 차트 배경색 설정 (디자인 통일)
+            formsPlotRAM.Plot.FigureBackground.Color = ScottPlot.Color.FromColor(Color.FromArgb(243, 243, 243));
+            formsPlotRAM.Plot.DataBackground.Color = ScottPlot.Color.FromColor(Color.White);
+
+            formsPlotRAM.Refresh();
+        }
+
+        private void InitPlotGPU()
+        {
+            // 1. GPU용 스트리머 생성 (60초 분량)
+            gpuStreamer = formsPlotGPU.Plot.Add.DataStreamer(60);
+
+            // 2. 왼쪽으로 흐르는 뷰 설정
+            gpuStreamer.ViewScrollLeft();
+
+            // 3. 초기 위치 동기화를 위해 0으로 채움
+            for (int i = 0; i < 60; i++)
+            {
+                gpuStreamer.Add(0);
+            }
+
+            // 4. X축 레이블 설정 (60 ~ 0)
+            double[] tickPositions = { 0, 10, 20, 30, 40, 50, 60 };
+            string[] tickLabels = { "60", "50", "40", "30", "20", "10", "0" };
+            formsPlotGPU.Plot.Axes.Bottom.SetTicks(tickPositions, tickLabels);
+            formsPlotGPU.Plot.Axes.Bottom.Label.Text = "Seconds Ago";
+
+            // 5. 선 스타일 (주황) 및 축 범위 고정
+            gpuStreamer.Color = ScottPlot.Color.FromColor(Color.OrangeRed);
+            gpuStreamer.LineWidth = 2;
+            formsPlotGPU.Plot.Axes.SetLimits(0, 60, 0, 100);
+
+            // 6. 차트 배경색 설정
+            formsPlotGPU.Plot.FigureBackground.Color = ScottPlot.Color.FromColor(Color.FromArgb(243, 243, 243));
+            formsPlotGPU.Plot.DataBackground.Color = ScottPlot.Color.FromColor(Color.White);
+
+            formsPlotGPU.Refresh();
+        }
+
         // 윈도우 GPU 엔진 카운터 수집
         private void InitGpuCounters()
         {
@@ -89,10 +159,20 @@ namespace HWManager.Client
                 {
                     gpuVal += g.NextValue();
                 }
-                if (cpuStreamer != null)
+                if (cpuStreamer != null) // CPU 차트
                 {
                     cpuStreamer.Add(cpuVal); // 새로운 점 찍기
                     formsPlotCPU.Refresh();  // 화면 다시 그리기
+                }
+                if (ramStreamer != null) // RAM 차트
+                {
+                    ramStreamer.Add(ramVal);
+                    formsPlotRAM.Refresh();
+                }
+                if (gpuStreamer != null) // GPU 차트
+                {
+                    gpuStreamer.Add(gpuVal);
+                    formsPlotGPU.Refresh();
                 }
                 // UI 업데이트 (Progressbar & Label)
                 UpdateDisplay(cpuVal, ramVal, gpuVal);
@@ -113,27 +193,7 @@ namespace HWManager.Client
             lblGPU.Text = $"GPU 사용량: {g:F1}%";
         }
 
-        private void lblCPU_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void pbCPU_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void lblRAM_Layout(object sender, LayoutEventArgs e)
-        {
-
-        }
-
-        private void lblRAM_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void lblGPU_Click(object sender, EventArgs e)
+        private void tableLayoutPanel1_Paint(object sender, PaintEventArgs e)
         {
 
         }

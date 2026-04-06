@@ -38,6 +38,8 @@
             fileSystemWatcher1 = new FileSystemWatcher();
             formsPlotCPU = new ScottPlot.WinForms.FormsPlot();
             tableLayoutPanel1 = new TableLayoutPanel();
+            formsPlotGPU = new ScottPlot.WinForms.FormsPlot();
+            formsPlotRAM = new ScottPlot.WinForms.FormsPlot();
             panel1 = new Panel();
             lblCPU = new Label();
             panel2 = new Panel();
@@ -57,8 +59,6 @@
             lblRAM.Size = new Size(97, 15);
             lblRAM.TabIndex = 1;
             lblRAM.Text = "RAM 사용량: 0%";
-            lblRAM.Click += lblRAM_Click;
-            lblRAM.Layout += lblRAM_Layout;
             // 
             // lblGPU
             // 
@@ -68,30 +68,31 @@
             lblGPU.Size = new Size(94, 15);
             lblGPU.TabIndex = 2;
             lblGPU.Text = "GPU 사용량: 0%";
-            lblGPU.Click += lblGPU_Click;
             // 
             // pbGPU
             // 
+            pbGPU.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             pbGPU.Location = new Point(3, 27);
             pbGPU.Name = "pbGPU";
-            pbGPU.Size = new Size(435, 22);
+            pbGPU.Size = new Size(782, 22);
             pbGPU.Style = ProgressBarStyle.Continuous;
             pbGPU.TabIndex = 3;
             // 
             // pbCPU
             // 
+            pbCPU.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             pbCPU.Location = new Point(3, 24);
             pbCPU.Name = "pbCPU";
-            pbCPU.Size = new Size(435, 23);
+            pbCPU.Size = new Size(782, 23);
             pbCPU.Style = ProgressBarStyle.Continuous;
             pbCPU.TabIndex = 4;
-            pbCPU.Click += pbCPU_Click;
             // 
             // pbRAM
             // 
+            pbRAM.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             pbRAM.Location = new Point(3, 28);
             pbRAM.Name = "pbRAM";
-            pbRAM.Size = new Size(435, 23);
+            pbRAM.Size = new Size(782, 23);
             pbRAM.Style = ProgressBarStyle.Continuous;
             pbRAM.TabIndex = 5;
             // 
@@ -108,16 +109,18 @@
             // 
             // formsPlotCPU
             // 
-            formsPlotCPU.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+            formsPlotCPU.Dock = DockStyle.Fill;
             formsPlotCPU.Location = new Point(3, 63);
             formsPlotCPU.Name = "formsPlotCPU";
-            formsPlotCPU.Size = new Size(452, 170);
+            formsPlotCPU.Size = new Size(794, 170);
             formsPlotCPU.TabIndex = 6;
             // 
             // tableLayoutPanel1
             // 
             tableLayoutPanel1.ColumnCount = 1;
             tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tableLayoutPanel1.Controls.Add(formsPlotGPU, 0, 5);
+            tableLayoutPanel1.Controls.Add(formsPlotRAM, 0, 3);
             tableLayoutPanel1.Controls.Add(panel1, 0, 0);
             tableLayoutPanel1.Controls.Add(panel2, 0, 2);
             tableLayoutPanel1.Controls.Add(formsPlotCPU, 0, 1);
@@ -136,6 +139,23 @@
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel1.Size = new Size(800, 708);
             tableLayoutPanel1.TabIndex = 7;
+            tableLayoutPanel1.Paint += tableLayoutPanel1_Paint;
+            // 
+            // formsPlotGPU
+            // 
+            formsPlotGPU.Dock = DockStyle.Fill;
+            formsPlotGPU.Location = new Point(3, 535);
+            formsPlotGPU.Name = "formsPlotGPU";
+            formsPlotGPU.Size = new Size(794, 170);
+            formsPlotGPU.TabIndex = 11;
+            // 
+            // formsPlotRAM
+            // 
+            formsPlotRAM.Dock = DockStyle.Fill;
+            formsPlotRAM.Location = new Point(3, 299);
+            formsPlotRAM.Name = "formsPlotRAM";
+            formsPlotRAM.Size = new Size(794, 170);
+            formsPlotRAM.TabIndex = 10;
             // 
             // panel1
             // 
@@ -209,5 +229,7 @@
         private Label lblCPU;
         private Panel panel2;
         private Panel panel3;
+        private ScottPlot.WinForms.FormsPlot formsPlotRAM;
+        private ScottPlot.WinForms.FormsPlot formsPlotGPU;
     }
 }
