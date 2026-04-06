@@ -72,7 +72,7 @@
             Controls.Add(btnProcess);
             Controls.Add(btnMonitor);
             Name = "MainForm";
-            Text = "MainForm";
+            Text = "HWManager";
             ResumeLayout(false);
         }
 
