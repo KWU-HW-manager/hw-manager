@@ -1,0 +1,35 @@
+name: Feature
+description: 새로운 기능 추가
+title: "[Feat] "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: 이슈에 대한 설명을 작성해주세요.
+      placeholder: |
+        예시:
+        - 어떤 기능인지
+        - 왜 필요한지
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: 해당 이슈 해결을 위해 해야 할 작업을 작성해주세요.
+      placeholder: |
+        - [ ] 예시1
+        - [ ] 예시2
+    validations:
+      required: true
+
+  - type: textarea
+    id: etc
+    attributes:
+      label: ETC
+      description: 기타 특이사항을 작성해주세요.
+      placeholder: |
+        기타 특이사항
