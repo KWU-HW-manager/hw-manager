@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HWManager.Client", "src\HWM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HWManager.Server", "src\HWManager.Server\HWManager.Server.csproj", "{968991B9-DD45-459A-A07B-9975A8C7D4E9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HWManager.Core", "HWManager.Core\HWManager.Core.csproj", "{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,18 @@ Global
 		{968991B9-DD45-459A-A07B-9975A8C7D4E9}.Release|x64.Build.0 = Release|Any CPU
 		{968991B9-DD45-459A-A07B-9975A8C7D4E9}.Release|x86.ActiveCfg = Release|Any CPU
 		{968991B9-DD45-459A-A07B-9975A8C7D4E9}.Release|x86.Build.0 = Release|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Debug|x64.Build.0 = Debug|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Debug|x86.Build.0 = Debug|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Release|x64.ActiveCfg = Release|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Release|x64.Build.0 = Release|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Release|x86.ActiveCfg = Release|Any CPU
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,5 +64,9 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{CB5AF414-6E68-4E08-830D-2ED51202AA12} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{968991B9-DD45-459A-A07B-9975A8C7D4E9} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{BCC3C6A0-7C3C-4D04-A6BC-73B6B7225A0D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C0F33D2D-7CE7-4474-B725-7DE79BD93599}
 	EndGlobalSection
 EndGlobal
