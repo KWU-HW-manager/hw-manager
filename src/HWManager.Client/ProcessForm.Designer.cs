@@ -155,7 +155,7 @@
             txtSearch.PlaceholderText = "프로세스 검색...";
             txtSearch.Size = new Size(744, 23);
             txtSearch.TabIndex = 0;
-            txtSearch.TextChanged += textBox1_TextChanged;
+            txtSearch.TextChanged += txtSearch_TextChanged;
             // 
             // ProcessForm
             // 
