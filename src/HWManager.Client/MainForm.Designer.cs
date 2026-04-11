@@ -2,15 +2,8 @@
 {
     partial class MainForm
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -22,10 +15,6 @@
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             btnMonitor = new Button();
@@ -34,9 +23,7 @@
             tableLayoutPanel1 = new TableLayoutPanel();
             tableLayoutPanel1.SuspendLayout();
             SuspendLayout();
-            // 
-            // btnMonitor
-            // 
+
             btnMonitor.Anchor = AnchorStyles.None;
             btnMonitor.Location = new Point(295, 47);
             btnMonitor.Name = "btnMonitor";
@@ -45,9 +32,7 @@
             btnMonitor.Text = "하드웨어 모니터링";
             btnMonitor.UseVisualStyleBackColor = true;
             btnMonitor.Click += btnMonitor_Click;
-            // 
-            // btnProcess
-            // 
+
             btnProcess.Anchor = AnchorStyles.None;
             btnProcess.Location = new Point(295, 216);
             btnProcess.Name = "btnProcess";
@@ -56,9 +41,7 @@
             btnProcess.Text = "프로그램 관리";
             btnProcess.UseVisualStyleBackColor = true;
             btnProcess.Click += btnProcess_Click;
-            // 
-            // btnExit
-            // 
+
             btnExit.Anchor = AnchorStyles.None;
             btnExit.Location = new Point(295, 387);
             btnExit.Name = "btnExit";
@@ -67,9 +50,7 @@
             btnExit.Text = "종료";
             btnExit.UseVisualStyleBackColor = true;
             btnExit.Click += btnExit_Click;
-            // 
-            // tableLayoutPanel1
-            // 
+
             tableLayoutPanel1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             tableLayoutPanel1.BackColor = Color.WhiteSmoke;
             tableLayoutPanel1.ColumnCount = 1;
@@ -85,9 +66,7 @@
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
             tableLayoutPanel1.Size = new Size(800, 510);
             tableLayoutPanel1.TabIndex = 3;
-            // 
-            // MainForm
-            // 
+
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
