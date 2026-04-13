@@ -8,6 +8,7 @@ namespace HWManager.Client
         [STAThread]
         static void Main()
         {
+            Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
             ApplicationConfiguration.Initialize();
 
             // DatabaseHelper.cs: 초기화 메서드 호출

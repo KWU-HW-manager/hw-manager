@@ -32,6 +32,7 @@
             tabPage1 = new TabPage();
             tableLayoutPanel1 = new TableLayoutPanel();
             panel1 = new Panel();
+            flowLayoutPanel1 = new FlowLayoutPanel();
             btnKill = new Button();
             btnRefresh = new Button();
             lvProcesses = new ListView();
@@ -49,6 +50,7 @@
             tabPage1.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
             panel1.SuspendLayout();
+            flowLayoutPanel1.SuspendLayout();
             panel2.SuspendLayout();
             tabPage2.SuspendLayout();
             tableLayoutPanel2.SuspendLayout();
@@ -99,8 +101,7 @@
             // 
             // panel1
             // 
-            panel1.Controls.Add(btnKill);
-            panel1.Controls.Add(btnRefresh);
+            panel1.Controls.Add(flowLayoutPanel1);
             panel1.Dock = DockStyle.Fill;
             panel1.Location = new Point(13, 341);
             panel1.Name = "panel1";
@@ -108,10 +109,20 @@
             panel1.Size = new Size(762, 64);
             panel1.TabIndex = 0;
             // 
+            // flowLayoutPanel1
+            // 
+            flowLayoutPanel1.Controls.Add(btnKill);
+            flowLayoutPanel1.Controls.Add(btnRefresh);
+            flowLayoutPanel1.Dock = DockStyle.Fill;
+            flowLayoutPanel1.FlowDirection = FlowDirection.RightToLeft;
+            flowLayoutPanel1.Location = new Point(0, 0);
+            flowLayoutPanel1.Name = "flowLayoutPanel1";
+            flowLayoutPanel1.Size = new Size(747, 64);
+            flowLayoutPanel1.TabIndex = 3;
+            // 
             // btnKill
             // 
-            btnKill.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnKill.Location = new Point(654, 3);
+            btnKill.Location = new Point(648, 3);
             btnKill.Name = "btnKill";
             btnKill.Size = new Size(96, 23);
             btnKill.TabIndex = 2;
@@ -121,8 +132,8 @@
             // 
             // btnRefresh
             // 
-            btnRefresh.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnRefresh.Location = new Point(548, 3);
+            btnRefresh.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnRefresh.Location = new Point(542, 3);
             btnRefresh.Name = "btnRefresh";
             btnRefresh.Size = new Size(100, 23);
             btnRefresh.TabIndex = 1;
@@ -255,6 +266,7 @@
             tabPage1.ResumeLayout(false);
             tableLayoutPanel1.ResumeLayout(false);
             panel1.ResumeLayout(false);
+            flowLayoutPanel1.ResumeLayout(false);
             panel2.ResumeLayout(false);
             panel2.PerformLayout();
             tabPage2.ResumeLayout(false);
@@ -283,5 +295,6 @@
         private DataGridView dgvProcessLog;
         private Button btnRefreshLogs;
         private TableLayoutPanel tableLayoutPanel2;
+        private FlowLayoutPanel flowLayoutPanel1;
     }
 }

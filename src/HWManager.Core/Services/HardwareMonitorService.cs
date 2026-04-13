@@ -45,7 +45,17 @@ namespace HWManager.Core.Services
             float gpuVal = 0;
             foreach (var g in _gpus)
             {
-                try { gpuVal += g.NextValue(); } catch { }
+                try
+                {
+                    float currentVal = g.NextValue();
+
+                    // 여러 엔진 중 가장 높은 사용량 하나만 선택 (합산 방지)
+                    if (currentVal > gpuVal)
+                    {
+                        gpuVal = currentVal;
+                    }
+                }
+                catch { }
             }
 
             return new SystemSnapshot
