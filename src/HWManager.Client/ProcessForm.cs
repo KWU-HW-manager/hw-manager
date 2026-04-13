@@ -38,23 +38,6 @@ namespace HWManager.Client
             {
                 MessageBox.Show($"목록 로드 실패: {ex.Message}");
             }
-
-            lvProcesses.BeginUpdate();
-            lvProcesses.Items.Clear();
-            foreach (Process p in _allProcesses)
-            {
-                try
-                {
-                    ListViewItem item = new ListViewItem(p.ProcessName);
-                    item.SubItems.Add(p.Id.ToString());
-                    long memUsage = p.WorkingSet64 / 1024 / 1024;
-                    item.SubItems.Add($"{memUsage:N0} MB");
-                    lvProcesses.Items.Add(item);
-                }
-                catch { continue; }
-            }
-            lvProcesses.EndUpdate();
-            lblSummary.Text = $"총 프로세스: {_allProcesses.Count}개 | 메모리 점유 순 정렬 완료";
         }
 
         private void UpdateProcessList(string filter)
