@@ -49,15 +49,20 @@ namespace HWManager.Core.Services
                 {
                     float currentVal = g.NextValue();
 
-                    // 여러 엔진 중 가장 높은 사용량 하나만 선택 (합산 방지)
-                    if (currentVal > gpuVal)
+                    // [핵심 로직] 값이 0보다 크고 100 이하인 "정상적인 백분율"만 취합니다.
+                    // 노트북에서 수백만이 찍히는 '가짜 값'은 여기서 걸러집니다.
+                    if (currentVal > 0 && currentVal <= 100)
                     {
-                        gpuVal = currentVal;
+                        if (currentVal > gpuVal)
+                        {
+                            gpuVal = currentVal;
+                        }
                     }
                 }
                 catch { }
             }
 
+            if (gpuVal > 100) gpuVal = 100;
             return new SystemSnapshot
             {
                 CpuUsage = cpuVal,
