@@ -34,13 +34,23 @@ namespace HWManager.Core.Services
             return list.OrderByDescending(x => x.MemoryUsageMB).ToList();
         }
 
-        // 프로세스 종료
-        public bool KillProcess(int pid)
+        // 이름으로 관련된 모든 프로세스 종료
+        public bool KillProcessesByName(string processName)
         {
             try
             {
-                var target = Process.GetProcessById(pid);
-                target.Kill();
+                // 1. 해당 이름을 가진 모든 프로세스 찾기 (예: "Discord")
+                var targets = Process.GetProcessesByName(processName);
+
+                foreach (var p in targets)
+                {
+                    try
+                    {
+                        // 2. 각 프로세스와 그 자식들까지 싹 다 종료
+                        p.Kill(true);
+                    }
+                    catch { continue; }
+                }
                 return true;
             }
             catch { return false; }
