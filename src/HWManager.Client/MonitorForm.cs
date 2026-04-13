@@ -24,6 +24,14 @@ namespace HWManager.Client
             InitPlotGPU();
         }
 
+        private void btnRefreshHardware_Click(object sender, EventArgs e)
+        {
+            // DatabaseHelper.cs: GetLogs 호출
+            System.Data.DataTable dt = DatabaseHelper.GetLogs("Hardware");
+            dgvHardwareLog.DataSource = dt;
+            dgvHardwareLog.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+        }
+
         private void InitPlotCPU()
         {
             cpuStreamer = formsPlotCPU.Plot.Add.DataStreamer(60);

@@ -3,15 +3,13 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Windows.Forms;
-using HWManager.Core.Models;
-using HWManager.Core.Services;
+using System.Diagnostics;
 
 namespace HWManager.Client
 {
     public partial class ProcessForm : Form
     {
-        private ProcessService _processService = new ProcessService();
-        private List<ProcessInfo> _allProcesses = new List<ProcessInfo>();
+        private List<Process> _allProcesses = new List<Process>();
 
         public ProcessForm()
         {
@@ -19,32 +17,60 @@ namespace HWManager.Client
             LoadProcesses();
         }
 
-        // 데이터 로드 및 전체 캐시 업데이트
-        private void LoadProcesses()
+        private void btnRefreshLogs_Click(object sender, EventArgs e)
         {
-            _allProcesses = _processService.GetProcesses();
-            UpdateProcessList(txtSearch.Text);
+            // DatabaseHelper.cs: GetLogs 호출
+            DataTable dt = DatabaseHelper.GetLogs("TopProcess");
+            dgvProcessLog.DataSource = dt;
+            dgvProcessLog.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
         }
 
-        // 리스트뷰 화면 업데이트 (필터링 포함)
+        private void LoadProcesses()
+        {
+            try
+            {
+                _allProcesses = Process.GetProcesses().OrderByDescending(p => p.WorkingSet64).ToList();
+                UpdateProcessList(txtSearch.Text);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"목록 로드 실패: {ex.Message}");
+            }
+
+            lvProcesses.BeginUpdate();
+            lvProcesses.Items.Clear();
+            foreach (Process p in _allProcesses)
+            {
+                try
+                {
+                    ListViewItem item = new ListViewItem(p.ProcessName);
+                    item.SubItems.Add(p.Id.ToString());
+                    long memUsage = p.WorkingSet64 / 1024 / 1024;
+                    item.SubItems.Add($"{memUsage:N0} MB");
+                    lvProcesses.Items.Add(item);
+                }
+                catch { continue; }
+            }
+            lvProcesses.EndUpdate();
+            lblSummary.Text = $"총 프로세스: {_allProcesses.Count}개 | 메모리 점유 순 정렬 완료";
+        }
+
         private void UpdateProcessList(string filter)
         {
             lvProcesses.BeginUpdate();
             lvProcesses.Items.Clear();
-
-            var filtered = _allProcesses
-                .Where(p => string.IsNullOrEmpty(filter) ||
-                            p.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
+            var filtered = _allProcesses.Where(p => string.IsNullOrEmpty(filter) || p.ProcessName.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
             foreach (var p in filtered)
             {
-                ListViewItem item = new ListViewItem(p.Name);
-                item.SubItems.Add(p.Id.ToString());
-                item.SubItems.Add($"{p.MemoryUsageMB:N0} MB");
-                lvProcesses.Items.Add(item);
+                try
+                {
+                    ListViewItem item = new ListViewItem(p.ProcessName);
+                    item.SubItems.Add(p.Id.ToString());
+                    item.SubItems.Add($"{(p.WorkingSet64 / 1024 / 1024):N0} MB");
+                    lvProcesses.Items.Add(item);
+                }
+                catch { continue; }
             }
-
             lvProcesses.EndUpdate();
             lblSummary.Text = $"검색 결과: {filtered.Count}개 / 전체: {_allProcesses.Count}개";
         }
@@ -53,28 +79,21 @@ namespace HWManager.Client
 
         private void btnKill_Click(object sender, EventArgs e)
         {
-            if (lvProcesses.SelectedItems.Count == 0) return;
-
-            int pid = int.Parse(lvProcesses.SelectedItems[0].SubItems[1].Text);
-            string name = lvProcesses.SelectedItems[0].Text;
-
-            if (MessageBox.Show($"{name}를 종료하시겠습니까?", "종료 확인", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            if (lvProcesses.SelectedItems.Count > 0)
             {
-                if (_processService.KillProcess(pid))
+                try
                 {
+                    int pid = int.Parse(lvProcesses.SelectedItems[0].SubItems[1].Text);
+                    Process target = Process.GetProcessById(pid);
+                    target.Kill();
                     MessageBox.Show("종료되었습니다.");
                     LoadProcesses();
                 }
-                else
-                {
-                    MessageBox.Show("종료 실패 (권한 부족)");
-                }
+                catch (Exception ex) { MessageBox.Show("종료할 수 없습니다: " + ex.Message); }
             }
         }
 
-        private void txtSearch_TextChanged(object sender, EventArgs e)
-        {
-            UpdateProcessList(txtSearch.Text);
-        }
+        private void textBox1_TextChanged(object sender, EventArgs e) => UpdateProcessList(txtSearch.Text);
+
     }
 }

@@ -1,16 +1,18 @@
+using System;
+using System.Windows.Forms;
+
 namespace HWManager.Client
 {
     internal static class Program
     {
-        /// <summary>
-        ///  The main entry point for the application.
-        /// </summary>
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
+
+            // DatabaseHelper.cs: 초기화 메서드 호출
+            DatabaseHelper.Initialize();
+
             Application.Run(new MainForm());
         }
     }

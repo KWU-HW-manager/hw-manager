@@ -2,7 +2,7 @@
 using System.Data;
 using System.Data.SQLite;
 
-namespace WinFormsApp1
+namespace HWManager.Client
 {
     public static class DatabaseHelper
     {
