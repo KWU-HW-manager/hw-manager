@@ -1,92 +1,70 @@
 ﻿using System;
-using System.Collections.Generic; // List를 쓰기 위해 필요
-using System.Diagnostics;         // PerformanceCounter를 쓰기 위해 필요
-using HWManager.Core.Models;      // SystemSnapshot을 쓰기 위해 필요
-
+using System.Linq;
+using LibreHardwareMonitor.Hardware; // 라이브러리 추가
+using HWManager.Core.Models;
 
 namespace HWManager.Core.Services
 {
     public class HardwareMonitorService
     {
-        private PerformanceCounter _cpu = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-        private PerformanceCounter _ram = new PerformanceCounter("Memory", "% Committed Bytes In Use");
-        private List<PerformanceCounter> _gpus = new List<PerformanceCounter>();
-        private DateTime _lastUpdate = DateTime.MinValue;
+        private Computer _computer;
 
         public HardwareMonitorService()
         {
-            InitGpuCounters();
-        }
-
-        private void InitGpuCounters()
-        {
-            try
+            // 하드웨어 모니터 객체 초기화
+            _computer = new Computer
             {
-                foreach (var g in _gpus) g.Dispose();
-                _gpus.Clear();
-
-                var category = new PerformanceCounterCategory("GPU Engine");
-                foreach (var instance in category.GetInstanceNames())
-                {
-                    if (instance.Contains("engtype_3D"))
-                    {
-                        var counter = new PerformanceCounter("GPU Engine", "Utilization Percentage", instance);
-
-                        // [핵심] 생성 직후 한 번 호출해서 '이전 시점' 데이터를 만들어둡니다.
-                        // 이렇게 하면 GetCurrentStatus에서 호출할 때 바로 실제 값이 나옵니다.
-                        try { counter.NextValue(); } catch { }
-
-                        _gpus.Add(counter);
-                    }
-                }
-            }
-            catch { }
+                IsCpuEnabled = true,
+                IsMemoryEnabled = true,
+                IsGpuEnabled = true
+            };
+            _computer.Open();
         }
 
         public SystemSnapshot GetCurrentStatus()
         {
-            // CPU 수집
-            float cpuVal = _cpu.NextValue();
+            float cpu = 0;
+            float ram = 0;
+            float gpu = 0;
 
-            // RAM 수집
-            float ramVal = _ram.NextValue();
-
-            // GPU 수집 (기존 합산 방식)
-            float gpuVal = 0;
-
-            foreach (var g in _gpus)
+            foreach (IHardware hardware in _computer.Hardware)
             {
-                try
+                hardware.Update();
+
+                foreach (ISensor sensor in hardware.Sensors)
                 {
-                    if ((DateTime.Now - _lastUpdate).TotalSeconds > 5)
+                    if (sensor.SensorType == SensorType.Load)
                     {
-                        InitGpuCounters();
-                        _lastUpdate = DateTime.Now;
-                    }
-
-                    float currentVal = g.NextValue();
-
-                    // [핵심 로직] 값이 0보다 크고 100 이하인 "정상적인 백분율"만 취합니다.
-                    // 노트북에서 수백만이 찍히는 '가짜 값'은 여기서 걸러집니다.
-                    if (currentVal > 0 && currentVal <= 100)
-                    {
-                        if (currentVal > gpuVal)
+                        // CPU: 전체 사용량(Total) 하나만 타겟팅
+                        if (hardware.HardwareType == HardwareType.Cpu && sensor.Name.Contains("Total"))
                         {
-                            gpuVal = currentVal;
+                            cpu = sensor.Value ?? 0;
+                        }
+
+                        // RAM: 전체 메모리 부하
+                        if (hardware.HardwareType == HardwareType.Memory)
+                        {
+                            ram = sensor.Value ?? 0;
+                        }
+
+                        // GPU 코어 사용량
+                        if (hardware.HardwareType.ToString().Contains("Gpu") && sensor.Name.Contains("GPU Core"))
+                        {
+                            gpu = sensor.Value ?? 0;
                         }
                     }
                 }
-                catch { }
+
             }
 
-            if (gpuVal > 100) gpuVal = 100;
             return new SystemSnapshot
             {
-                CpuUsage = cpuVal,
-                RamUsage = (double)ramVal,
-                GpuUsage = gpuVal,
+                CpuUsage = cpu,
+                RamUsage = (double)ram,
+                GpuUsage = gpu,
                 MeasuredAt = DateTime.Now
             };
         }
+        public void Dispose() => _computer.Close(); // 리소스 해제
     }
 }
