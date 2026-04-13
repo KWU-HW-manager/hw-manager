@@ -11,6 +11,7 @@ namespace HWManager.Core.Services
         private PerformanceCounter _cpu = new PerformanceCounter("Processor", "% Processor Time", "_Total");
         private PerformanceCounter _ram = new PerformanceCounter("Memory", "% Committed Bytes In Use");
         private List<PerformanceCounter> _gpus = new List<PerformanceCounter>();
+        private DateTime _lastUpdate = DateTime.MinValue;
 
         public HardwareMonitorService()
         {
@@ -21,12 +22,21 @@ namespace HWManager.Core.Services
         {
             try
             {
+                foreach (var g in _gpus) g.Dispose();
+                _gpus.Clear();
+
                 var category = new PerformanceCounterCategory("GPU Engine");
                 foreach (var instance in category.GetInstanceNames())
                 {
-                    if (instance.EndsWith("engtype_3D"))
+                    if (instance.Contains("engtype_3D"))
                     {
-                        _gpus.Add(new PerformanceCounter("GPU Engine", "Utilization Percentage", instance));
+                        var counter = new PerformanceCounter("GPU Engine", "Utilization Percentage", instance);
+
+                        // [핵심] 생성 직후 한 번 호출해서 '이전 시점' 데이터를 만들어둡니다.
+                        // 이렇게 하면 GetCurrentStatus에서 호출할 때 바로 실제 값이 나옵니다.
+                        try { counter.NextValue(); } catch { }
+
+                        _gpus.Add(counter);
                     }
                 }
             }
@@ -43,10 +53,17 @@ namespace HWManager.Core.Services
 
             // GPU 수집 (기존 합산 방식)
             float gpuVal = 0;
+
             foreach (var g in _gpus)
             {
                 try
                 {
+                    if ((DateTime.Now - _lastUpdate).TotalSeconds > 5)
+                    {
+                        InitGpuCounters();
+                        _lastUpdate = DateTime.Now;
+                    }
+
                     float currentVal = g.NextValue();
 
                     // [핵심 로직] 값이 0보다 크고 100 이하인 "정상적인 백분율"만 취합니다.
