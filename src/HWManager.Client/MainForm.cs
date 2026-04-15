@@ -22,6 +22,7 @@ namespace HWManager.Client
         // 알림 서비스 추가
         private AlertService _alertService = new AlertService();
         private HashSet<string> _recentAlerts = new HashSet<string>(); // 중복 방지
+        private Dictionary<string, DateTime> _lastAlertTime = new Dictionary<string, DateTime>(); // 마지막 알림 시간 기록
 
         public MainForm()
         {
@@ -32,7 +33,7 @@ namespace HWManager.Client
             InitDbLogTimer();
 
             // 알림 이벤트 구독
-            //_alertService.AlertTriggered += AlertService_AlertTriggered;
+            _alertService.AlertTriggered += AlertService_AlertTriggered;
         }
 
 
@@ -47,7 +48,7 @@ namespace HWManager.Client
             dbLogTimer.Start();
         }
 
-        private void DbLogTimer_Tick(object sender, EventArgs e)
+        private void DbLogTimer_Tick(object? sender, EventArgs e)
         {
             try
             {
@@ -61,6 +62,9 @@ namespace HWManager.Client
                 foreach (var g in gpuCounters) gpuVal += g.NextValue();
 
                 DatabaseHelper.SaveHardwareLog(cpuVal, ramVal, gpuVal);
+                
+                // 알림 확인 추가 
+                _alertService.CheckAndAlert(cpuVal, ramVal, gpuVal);
 
                 // 프로세스 상위 10개 수집 및 저장
                 var topProcs = Process.GetProcesses()
@@ -89,11 +93,21 @@ namespace HWManager.Client
 
         private void HandleAlert(AlertRecord record)
         {
-            // 같은 리소스의 중복 알림 3초 내 방지
-            string alertKey = $"{record.ResourceType}_{DateTime.Now:mm:ss}";
-            if (_recentAlerts.Contains(alertKey)) return;
+            // 같은 리소스의 중복 알림 최소 60초 간격으로 제한
+            string alertKey = record.ResourceType;
+            
+            // 마지막 알림 시간을 기록 (필드 추가 필요)
+            if (_lastAlertTime.ContainsKey(alertKey))
+            {
+                var timeSinceLastAlert = DateTime.Now - _lastAlertTime[alertKey];
+                if (timeSinceLastAlert.TotalSeconds < 60) // 60초 이내면 무시
+                {
+                    return;
+                }
+            }
 
-            _recentAlerts.Add(alertKey);
+            // 알림 시간 업데이트
+            _lastAlertTime[alertKey] = DateTime.Now;
 
             string message = $"⚠️ {record.ResourceType} 알림\n\n" +
                            $"사용량: {record.UsagePercentage:F1}%\n" +
@@ -104,7 +118,7 @@ namespace HWManager.Client
                 MessageBoxIcon.Warning);
 
             // 데이터베이스 저장
-            //DatabaseHelper.SaveAlertLog(record.ResourceType, record.UsagePercentage, record.Details);
+            DatabaseHelper.SaveAlertLog(record.ResourceType, record.UsagePercentage, record.Details);
         }
 
 
