@@ -1,60 +1,70 @@
 ﻿using System;
-using System.Collections.Generic; // List를 쓰기 위해 필요
-using System.Diagnostics;         // PerformanceCounter를 쓰기 위해 필요
-using HWManager.Core.Models;      // SystemSnapshot을 쓰기 위해 필요
-
+using System.Linq;
+using LibreHardwareMonitor.Hardware; // 라이브러리 추가
+using HWManager.Core.Models;
 
 namespace HWManager.Core.Services
 {
     public class HardwareMonitorService
     {
-        private PerformanceCounter _cpu = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-        private PerformanceCounter _ram = new PerformanceCounter("Memory", "% Committed Bytes In Use");
-        private List<PerformanceCounter> _gpus = new List<PerformanceCounter>();
+        private Computer _computer;
 
         public HardwareMonitorService()
         {
-            InitGpuCounters();
-        }
-
-        private void InitGpuCounters()
-        {
-            try
+            // 하드웨어 모니터 객체 초기화
+            _computer = new Computer
             {
-                var category = new PerformanceCounterCategory("GPU Engine");
-                foreach (var instance in category.GetInstanceNames())
-                {
-                    if (instance.EndsWith("engtype_3D"))
-                    {
-                        _gpus.Add(new PerformanceCounter("GPU Engine", "Utilization Percentage", instance));
-                    }
-                }
-            }
-            catch { }
+                IsCpuEnabled = true,
+                IsMemoryEnabled = true,
+                IsGpuEnabled = true
+            };
+            _computer.Open();
         }
 
         public SystemSnapshot GetCurrentStatus()
         {
-            // CPU 수집
-            float cpuVal = _cpu.NextValue();
+            float cpu = 0;
+            float ram = 0;
+            float gpu = 0;
 
-            // RAM 수집
-            float ramVal = _ram.NextValue();
-
-            // GPU 수집 (기존 합산 방식)
-            float gpuVal = 0;
-            foreach (var g in _gpus)
+            foreach (IHardware hardware in _computer.Hardware)
             {
-                try { gpuVal += g.NextValue(); } catch { }
+                hardware.Update();
+
+                foreach (ISensor sensor in hardware.Sensors)
+                {
+                    if (sensor.SensorType == SensorType.Load)
+                    {
+                        // CPU: 전체 사용량(Total) 하나만 타겟팅
+                        if (hardware.HardwareType == HardwareType.Cpu && sensor.Name.Contains("Total"))
+                        {
+                            cpu = sensor.Value ?? 0;
+                        }
+
+                        // RAM: 전체 메모리 부하
+                        if (hardware.HardwareType == HardwareType.Memory)
+                        {
+                            ram = sensor.Value ?? 0;
+                        }
+
+                        // GPU 코어 사용량
+                        if (hardware.HardwareType.ToString().Contains("Gpu") && sensor.Name.Contains("GPU Core"))
+                        {
+                            gpu = sensor.Value ?? 0;
+                        }
+                    }
+                }
+
             }
 
             return new SystemSnapshot
             {
-                CpuUsage = cpuVal,
-                RamUsage = (double)ramVal,
-                GpuUsage = gpuVal,
+                CpuUsage = cpu,
+                RamUsage = (double)ram,
+                GpuUsage = gpu,
                 MeasuredAt = DateTime.Now
             };
         }
+        public void Dispose() => _computer.Close(); // 리소스 해제
     }
 }

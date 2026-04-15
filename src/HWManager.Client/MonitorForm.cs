@@ -1,7 +1,4 @@
-﻿using System;
-using System.Drawing;
-using System.Windows.Forms;
-using HWManager.Core.Models;
+﻿using HWManager.Core.Models;
 using HWManager.Core.Services;
 
 namespace HWManager.Client

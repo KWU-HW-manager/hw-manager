@@ -5,30 +5,29 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using System.Diagnostics;
-using Microsoft.VisualBasic.Devices;
+using HWManager.Core.Models;
+using HWManager.Core.Services;
 
 namespace HWManager.Client
 {
     public partial class MainForm : Form
     {
-        private PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-        private ComputerInfo computerInfo = new ComputerInfo();
-        private List<PerformanceCounter> gpuCounters = new List<PerformanceCounter>();
+        // 정확한 수집을 위한 서비스 선언
+        private HardwareMonitorService _monitorService = new HardwareMonitorService();
         private System.Windows.Forms.Timer dbLogTimer;
 
         public MainForm()
         {
             InitializeComponent();
             ApplyModernStyle();
-
-            InitGpuCounters();
             InitDbLogTimer();
         }
 
         private void InitDbLogTimer()
         {
+            //10초 주기 타이머 유지
             dbLogTimer = new System.Windows.Forms.Timer();
-            dbLogTimer.Interval = 10000;
+            dbLogTimer.Interval = 10000; // 10초
             dbLogTimer.Tick += DbLogTimer_Tick;
             dbLogTimer.Start();
         }
@@ -37,18 +36,17 @@ namespace HWManager.Client
         {
             try
             {
-                // 하드웨어 데이터 수집 및 저장
-                float cpuVal = cpuCounter.NextValue();
-                double totalRam = computerInfo.TotalPhysicalMemory;
-                double availRam = computerInfo.AvailablePhysicalMemory;
-                double ramVal = (totalRam - availRam) / totalRam * 100;
+                // 1. 서비스에서 정확한 데이터 스냅샷 가져오기
+                SystemSnapshot snapshot = _monitorService.GetCurrentStatus();
 
-                float gpuVal = 0;
-                foreach (var g in gpuCounters) gpuVal += g.NextValue();
+                // 2. 팀원 DB 함수 호출 (하드웨어 저장)
+                DatabaseHelper.SaveHardwareLog(
+                    snapshot.CpuUsage,
+                    snapshot.RamUsage,
+                    snapshot.GpuUsage
+                );
 
-                DatabaseHelper.SaveHardwareLog(cpuVal, ramVal, gpuVal);
-
-                // 프로세스 상위 10개 수집 및 저장
+                // 3. 프로세스 상위 10개 수집 및 저장
                 var topProcs = Process.GetProcesses()
                                       .OrderByDescending(p => p.WorkingSet64)
                                       .Take(10)
@@ -57,23 +55,7 @@ namespace HWManager.Client
 
                 DatabaseHelper.SaveTop10ProcessRow(topProcs);
             }
-            catch { }
-        }
-
-        private void InitGpuCounters()
-        {
-            try
-            {
-                var category = new PerformanceCounterCategory("GPU Engine");
-                foreach (var instance in category.GetInstanceNames())
-                {
-                    if (instance.EndsWith("engtype_3D"))
-                    {
-                        gpuCounters.Add(new PerformanceCounter("GPU Engine", "Utilization Percentage", instance));
-                    }
-                }
-            }
-            catch { }
+            catch { } // 예외 발생 시 무시
         }
 
         private void ApplyModernStyle()
@@ -113,6 +95,13 @@ namespace HWManager.Client
             {
                 Application.Exit();
             }
+        }
+
+        // 프로그램 종료 시 하드웨어 리소스 해제
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            _monitorService?.Dispose();
+            base.OnFormClosing(e);
         }
     }
 }
