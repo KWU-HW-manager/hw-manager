@@ -1,11 +1,13 @@
-﻿using System;
+﻿using HWManager.Core.Services;
+using HWManager.Core.Models;
+using Microsoft.VisualBasic.Devices;
+using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using System.Diagnostics;
-using Microsoft.VisualBasic.Devices;
 
 namespace HWManager.Client
 {
@@ -16,6 +18,11 @@ namespace HWManager.Client
         private List<PerformanceCounter> gpuCounters = new List<PerformanceCounter>();
         private System.Windows.Forms.Timer dbLogTimer;
 
+
+        // 알림 서비스 추가
+        private AlertService _alertService = new AlertService();
+        private HashSet<string> _recentAlerts = new HashSet<string>(); // 중복 방지
+
         public MainForm()
         {
             InitializeComponent();
@@ -23,7 +30,14 @@ namespace HWManager.Client
 
             InitGpuCounters();
             InitDbLogTimer();
+
+            // 알림 이벤트 구독
+            //_alertService.AlertTriggered += AlertService_AlertTriggered;
         }
+
+
+
+
 
         private void InitDbLogTimer()
         {
@@ -59,6 +73,40 @@ namespace HWManager.Client
             }
             catch { }
         }
+
+        //알림 이벤트 핸들러
+       private void AlertService_AlertTriggered(object sender, AlertEventArgs e)
+        {
+            // UI 스레드에서 실행 보장
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => HandleAlert(e.AlertRecord)));
+                return;
+            }
+
+            HandleAlert(e.AlertRecord);
+        }
+
+        private void HandleAlert(AlertRecord record)
+        {
+            // 같은 리소스의 중복 알림 3초 내 방지
+            string alertKey = $"{record.ResourceType}_{DateTime.Now:mm:ss}";
+            if (_recentAlerts.Contains(alertKey)) return;
+
+            _recentAlerts.Add(alertKey);
+
+            string message = $"⚠️ {record.ResourceType} 알림\n\n" +
+                           $"사용량: {record.UsagePercentage:F1}%\n" +
+                           $"시간: {record.AlertTime:yyyy-MM-dd HH:mm:ss}";
+
+            MessageBox.Show(message, "시스템 알림",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+
+            // 데이터베이스 저장
+            //DatabaseHelper.SaveAlertLog(record.ResourceType, record.UsagePercentage, record.Details);
+        }
+
 
         private void InitGpuCounters()
         {
