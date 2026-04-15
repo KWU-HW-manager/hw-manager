@@ -63,7 +63,14 @@ namespace HWManager.Client
                     snapshot.GpuUsage
                 );
 
-                // 3. 프로세스 상위 10개 수집 및 저장
+                // 3. 알림 확인 추가 
+                _alertService.CheckAndAlert(
+                    (float)snapshot.CpuUsage,
+                    snapshot.RamUsage,
+                    (float)snapshot.GpuUsage
+                );
+
+                // 4. 프로세스 상위 10개 수집 및 저장
                 var topProcs = Process.GetProcesses()
                                       .OrderByDescending(p => p.WorkingSet64)
                                       .Take(10)
@@ -72,7 +79,10 @@ namespace HWManager.Client
 
                 DatabaseHelper.SaveTop10ProcessRow(topProcs);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"타이머 오류: {ex.Message}");
+            }
         }
 
         //알림 이벤트 핸들러
@@ -118,7 +128,7 @@ namespace HWManager.Client
             DatabaseHelper.SaveAlertLog(record.ResourceType, record.UsagePercentage, record.Details);
         }
 
-
+/*
         private void InitGpuCounters()
         {
             try
@@ -133,7 +143,7 @@ namespace HWManager.Client
                 }
             }
             catch { }
-        }
+        }*/
 
         private void ApplyModernStyle()
         {
