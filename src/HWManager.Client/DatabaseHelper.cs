@@ -95,6 +95,26 @@ namespace HWManager.Client
             catch { }
         }
 
+        // 알림 로그 저장
+        public static void SaveAlertLog(string resourceType, float usage, string details)
+        {
+            try
+            {
+                using (var conn = new SQLiteConnection(connString))
+                {
+                    conn.Open();
+                    string sql = "INSERT INTO Logs (Category, CPU, ProcessInfo) VALUES ('Alert', @resource, @details)";
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@resource", $"{resourceType} {usage:F1}%");
+                        cmd.Parameters.AddWithValue("@details", details);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch { }
+        }
+
         // 데이터 조회 로직
         public static DataTable GetLogs(string category)
         {
@@ -115,6 +135,12 @@ namespace HWManager.Client
                             P1 as '1등', P2 as '2등', P3 as '3등', P4 as '4등', P5 as '5등', 
                             P6 as '6등', P7 as '7등', P8 as '8등', P9 as '9등', P10 as '10등' 
                             FROM Logs WHERE Category = 'TopProcess' ORDER BY Id DESC LIMIT 100";
+                }
+                else if (category == "Alert")
+                {
+                    sql = @"SELECT strftime('%Y-%m-%d %H:%M:%S', LogTime) as 시간, 
+                            CPU as 리소스, ProcessInfo as 상세내용 
+                            FROM Logs WHERE Category = 'Alert' ORDER BY Id DESC LIMIT 100";
                 }
                 else
                 {
