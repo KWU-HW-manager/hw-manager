@@ -14,7 +14,11 @@ namespace HWManager.Core.Services
 
     public class AlertService
     {
-        private const float ALERT_THRESHOLD = 90f;
+        // 리소스별 임계값 분리
+        private const float CPU_ALERT_THRESHOLD = 90f;
+        private const float RAM_ALERT_THRESHOLD = 90f;
+        private const float GPU_ALERT_THRESHOLD = 90f;
+
         private List<AlertRecord> _alertHistory = new List<AlertRecord>();
 
         /// <summary>
@@ -27,21 +31,21 @@ namespace HWManager.Core.Services
         /// </summary>
         public void CheckAndAlert(float cpuUsage, double ramUsage, float gpuUsage)
         {
-            CheckResourceUsage("CPU", cpuUsage);
-            CheckResourceUsage("RAM", (float)ramUsage);
-            CheckResourceUsage("GPU", gpuUsage);
+            CheckResourceUsage("CPU", cpuUsage, CPU_ALERT_THRESHOLD);
+            CheckResourceUsage("RAM", (float)ramUsage, RAM_ALERT_THRESHOLD);
+            CheckResourceUsage("GPU", gpuUsage, GPU_ALERT_THRESHOLD);
         }
 
-        private void CheckResourceUsage(string resourceType, float usage)
+        private void CheckResourceUsage(string resourceType, float usage, float threshold)
         {
-            if (usage >= ALERT_THRESHOLD)
+            if (usage >= threshold)
             {
                 var record = new AlertRecord
                 {
                     ResourceType = resourceType,
                     UsagePercentage = usage,
                     AlertTime = DateTime.Now,
-                    Details = $"{resourceType} 사용량이 {usage:F1}%에 도달했습니다."
+                    Details = $"{resourceType} 사용량이 {usage:F1}%에 도달했습니다. (임계값: {threshold}%)"
                 };
 
                 _alertHistory.Add(record);
@@ -71,6 +75,15 @@ namespace HWManager.Core.Services
         public void ClearHistory()
         {
             _alertHistory.Clear();
+        }
+
+        /// <summary>
+        /// 임계값 설정 (필요시 동적으로 변경 가능하도록)
+        /// </summary>
+        public void SetThresholds(float cpuThreshold, float ramThreshold, float gpuThreshold)
+        {
+            // 나중에 필드로 변경하면 사용 가능
+            // 현재는 상수이므로 주석 처리
         }
     }
 }
