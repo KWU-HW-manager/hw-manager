@@ -33,28 +33,36 @@ namespace HWManager.Core.Services
 
                 foreach (ISensor sensor in hardware.Sensors)
                 {
+
                     if (sensor.SensorType == SensorType.Load)
                     {
-                        // CPU: 전체 사용량(Total) 하나만 타겟팅
+                        float val = sensor.Value ?? 0;
+
                         if (hardware.HardwareType == HardwareType.Cpu && sensor.Name.Contains("Total"))
                         {
-                            cpu = sensor.Value ?? 0;
+                            cpu = val;
                         }
 
-                        // RAM: 전체 메모리 부하
                         if (hardware.HardwareType == HardwareType.Memory)
                         {
-                            ram = sensor.Value ?? 0;
+                            ram = val;
                         }
 
-                        // GPU 코어 사용량
-                        if (hardware.HardwareType.ToString().Contains("Gpu") && sensor.Name.Contains("GPU Core"))
+                        if (hardware.HardwareType.ToString().Contains("Gpu"))
                         {
-                            gpu = sensor.Value ?? 0;
+
+                            if (sensor.Name.Contains("GPU Core") || sensor.Name.Contains("D3D") || sensor.Name.Contains("3D"))
+                            {
+
+                                if (val >= 0 && val <= 100)
+                                {
+
+                                    if (val > gpu) gpu = val;
+                                }
+                            }
                         }
                     }
                 }
-
             }
 
             return new SystemSnapshot
@@ -65,6 +73,7 @@ namespace HWManager.Core.Services
                 MeasuredAt = DateTime.Now
             };
         }
+
         public void Dispose() => _computer.Close(); // 리소스 해제
     }
-}
+} 
