@@ -14,11 +14,8 @@ namespace HWManager.Core.Services
 
     public class AlertService
     {
-        // 리소스별 임계값 분리
-        private const float CPU_ALERT_THRESHOLD = 90f;
-        private const float RAM_ALERT_THRESHOLD = 90f;
-        private const float GPU_ALERT_THRESHOLD = 90f;
-
+        private const int ALERT_COOLDOWN_SECONDS = 60; // 고정된 중복 방지 시간
+        private AlertSettings _settings;
         private List<AlertRecord> _alertHistory = new List<AlertRecord>();
 
         /// <summary>
@@ -26,14 +23,20 @@ namespace HWManager.Core.Services
         /// </summary>
         public event EventHandler<AlertEventArgs> AlertTriggered;
 
+        public AlertService(AlertSettings settings = null)
+        {
+            // 기본값 또는 외부에서 전달된 설정 사용
+            _settings = settings ?? new AlertSettings();
+        }
+
         /// <summary>
         /// 사용량을 확인하고 임계값 초과 시 알림 발생
         /// </summary>
         public void CheckAndAlert(float cpuUsage, double ramUsage, float gpuUsage)
         {
-            CheckResourceUsage("CPU", cpuUsage, CPU_ALERT_THRESHOLD);
-            CheckResourceUsage("RAM", (float)ramUsage, RAM_ALERT_THRESHOLD);
-            CheckResourceUsage("GPU", gpuUsage, GPU_ALERT_THRESHOLD);
+            CheckResourceUsage("CPU", cpuUsage, _settings.CpuThreshold);
+            CheckResourceUsage("RAM", (float)ramUsage, _settings.RamThreshold);
+            CheckResourceUsage("GPU", gpuUsage, _settings.GpuThreshold);
         }
 
         private void CheckResourceUsage(string resourceType, float usage, float threshold)
@@ -62,6 +65,25 @@ namespace HWManager.Core.Services
         }
 
         /// <summary>
+        /// 임계값 설정 변경
+        /// </summary>
+        public void UpdateSettings(AlertSettings settings)
+        {
+            if (settings != null)
+            {
+                _settings = settings;
+            }
+        }
+
+        /// <summary>
+        /// 현재 설정 조회
+        /// </summary>
+        public AlertSettings GetSettings()
+        {
+            return _settings;
+        }
+
+        /// <summary>
         /// 알림 기록 조회
         /// </summary>
         public List<AlertRecord> GetAlertHistory()
@@ -75,15 +97,6 @@ namespace HWManager.Core.Services
         public void ClearHistory()
         {
             _alertHistory.Clear();
-        }
-
-        /// <summary>
-        /// 임계값 설정 (필요시 동적으로 변경 가능하도록)
-        /// </summary>
-        public void SetThresholds(float cpuThreshold, float ramThreshold, float gpuThreshold)
-        {
-            // 나중에 필드로 변경하면 사용 가능
-            // 현재는 상수이므로 주석 처리
         }
     }
 }

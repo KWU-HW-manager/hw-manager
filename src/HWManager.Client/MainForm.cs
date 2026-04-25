@@ -1,50 +1,48 @@
-﻿using HWManager.Core.Services;
-using HWManager.Core.Models;
+﻿using HWManager.Core.Models;
+using HWManager.Core.Services;
 using Microsoft.VisualBasic.Devices;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using System.Diagnostics;
-using HWManager.Core.Models;
-using HWManager.Core.Services;
 
 namespace HWManager.Client
 {
     public partial class MainForm : Form
     {
-        // 정확한 수집을 위한 서비스 선언
         private HardwareMonitorService _monitorService = new HardwareMonitorService();
-        private System.Windows.Forms.Timer dbLogTimer;
-
-
-        // 알림 서비스 추가
-        private AlertService _alertService = new AlertService();
-        private HashSet<string> _recentAlerts = new HashSet<string>(); // 중복 방지
-        private Dictionary<string, DateTime> _lastAlertTime = new Dictionary<string, DateTime>(); // 마지막 알림 시간 기록
+        private AlertService _alertService;
+        private System.Windows.Forms.Timer? dbLogTimer;
+        private Dictionary<string, DateTime> _lastAlertTime = new Dictionary<string, DateTime>();
 
         public MainForm()
         {
             InitializeComponent();
             ApplyModernStyle();
+            InitAlertService();
             InitDbLogTimer();
+        }
 
-            // 알림 이벤트 구독
+        private void InitAlertService()
+        {
+            // 알림 설정 초기화
+            var alertSettings = new AlertSettings
+            {
+                CpuThreshold = 90f,
+                RamThreshold = 90f,
+                GpuThreshold = 90f
+            };
+
+            _alertService = new AlertService(alertSettings);
             _alertService.AlertTriggered += AlertService_AlertTriggered;
         }
 
-
-
-
-
         private void InitDbLogTimer()
         {
-            //10초 주기 타이머 유지
             dbLogTimer = new System.Windows.Forms.Timer();
-            dbLogTimer.Interval = 10000; // 10초
+            dbLogTimer.Interval = 10000;
             dbLogTimer.Tick += DbLogTimer_Tick;
             dbLogTimer.Start();
         }
@@ -53,24 +51,20 @@ namespace HWManager.Client
         {
             try
             {
-                // 1. 서비스에서 정확한 데이터 스냅샷 가져오기
                 SystemSnapshot snapshot = _monitorService.GetCurrentStatus();
 
-                // 2. 팀원 DB 함수 호출 (하드웨어 저장)
                 DatabaseHelper.SaveHardwareLog(
                     snapshot.CpuUsage,
                     snapshot.RamUsage,
                     snapshot.GpuUsage
                 );
 
-                // 3. 알림 확인 추가 
                 _alertService.CheckAndAlert(
                     (float)snapshot.CpuUsage,
                     snapshot.RamUsage,
                     (float)snapshot.GpuUsage
                 );
 
-                // 4. 프로세스 상위 10개 수집 및 저장
                 var topProcs = Process.GetProcesses()
                                       .OrderByDescending(p => p.WorkingSet64)
                                       .Take(10)
@@ -81,14 +75,12 @@ namespace HWManager.Client
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"타이머 오류: {ex.Message}");
+                Debug.WriteLine($"타이머 오류: {ex.Message}");
             }
         }
 
-        //알림 이벤트 핸들러
-       private void AlertService_AlertTriggered(object sender, AlertEventArgs e)
+        private void AlertService_AlertTriggered(object? sender, AlertEventArgs e)
         {
-            // UI 스레드에서 실행 보장
             if (InvokeRequired)
             {
                 Invoke(new Action(() => HandleAlert(e.AlertRecord)));
@@ -100,20 +92,17 @@ namespace HWManager.Client
 
         private void HandleAlert(AlertRecord record)
         {
-            // 같은 리소스의 중복 알림 최소 60초 간격으로 제한
             string alertKey = record.ResourceType;
-            
-            // 마지막 알림 시간을 기록 (필드 추가 필요)
+
             if (_lastAlertTime.ContainsKey(alertKey))
             {
                 var timeSinceLastAlert = DateTime.Now - _lastAlertTime[alertKey];
-                if (timeSinceLastAlert.TotalSeconds < 60) // 60초 이내면 무시
+                if (timeSinceLastAlert.TotalSeconds < 60)
                 {
                     return;
                 }
             }
 
-            // 알림 시간 업데이트
             _lastAlertTime[alertKey] = DateTime.Now;
 
             string message = $"⚠️ {record.ResourceType} 알림\n\n" +
@@ -124,26 +113,8 @@ namespace HWManager.Client
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
 
-            // 데이터베이스 저장
             DatabaseHelper.SaveAlertLog(record.ResourceType, record.UsagePercentage, record.Details);
         }
-
-/*
-        private void InitGpuCounters()
-        {
-            try
-            {
-                var category = new PerformanceCounterCategory("GPU Engine");
-                foreach (var instance in category.GetInstanceNames())
-                {
-                    if (instance.EndsWith("engtype_3D"))
-                    {
-                        gpuCounters.Add(new PerformanceCounter("GPU Engine", "Utilization Percentage", instance));
-                    }
-                }
-            }
-            catch { }
-        }*/
 
         private void ApplyModernStyle()
         {
@@ -164,19 +135,19 @@ namespace HWManager.Client
             }
         }
 
-        private void btnMonitor_Click(object sender, EventArgs e)
+        private void btnMonitor_Click(object? sender, EventArgs e)
         {
             MonitorForm monitor = new MonitorForm();
             monitor.Show();
         }
 
-        private void btnProcess_Click(object sender, EventArgs e)
+        private void btnProcess_Click(object? sender, EventArgs e)
         {
             ProcessForm process = new ProcessForm();
             process.Show();
         }
 
-        private void btnExit_Click(object sender, EventArgs e)
+        private void btnExit_Click(object? sender, EventArgs e)
         {
             if (MessageBox.Show("프로그램을 종료하시겠습니까?", "종료", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
@@ -184,7 +155,6 @@ namespace HWManager.Client
             }
         }
 
-        // 프로그램 종료 시 하드웨어 리소스 해제
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             _monitorService?.Dispose();
