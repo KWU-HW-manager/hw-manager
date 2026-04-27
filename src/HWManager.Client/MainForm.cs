@@ -63,7 +63,7 @@ namespace HWManager.Client
             this.BackColor = Color.FromArgb(243, 243, 243);
             this.Text = "HWManager - Dashboard";
 
-            var buttons = new List<Button> { btnMonitor, btnProcess, btnExit };
+            var buttons = new List<Button> { btnMonitor, btnProcess, btnFocusMode, btnExit };
 
             foreach (var btn in buttons)
             {
@@ -87,6 +87,12 @@ namespace HWManager.Client
         {
             ProcessForm process = new ProcessForm();
             process.Show();
+        }
+
+        private void btnFocusMode_Click(object sender, EventArgs e)
+        {
+            FocusModeForm focus = new FocusModeForm();
+            focus.Show();
         }
 
         private void btnExit_Click(object sender, EventArgs e)
