@@ -591,7 +591,8 @@ namespace HWManager.Client
             // 
             // FocusModeForm
             // 
-            AutoScaleMode = AutoScaleMode.None;
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1400, 900);
             Controls.Add(rootLayout);
             Font = new Font("맑은 고딕", 9F);

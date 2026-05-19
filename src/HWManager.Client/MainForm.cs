@@ -106,6 +106,7 @@ namespace HWManager.Client
         // 프로그램 종료 시 하드웨어 리소스 해제
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            dbLogTimer?.Stop();
             _monitorService?.Dispose();
             base.OnFormClosing(e);
         }

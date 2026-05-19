@@ -33,6 +33,13 @@ namespace HWManager.Client
         // Designer.cs 가 어떻게 망가져도 이 메서드만 실행되면 UI 가 정상화됨.
         private void ConfigureRuntimeLayout()
         {
+            rootLayout.AutoScroll = true;
+
+            grpThreshold.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
+            grpKill.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
+            grpTrigger.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
+            grpRecommend.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
+
             // 임계값 라벨 및 단위
             SetupThresholdLabel(lblCpu, "CPU");
             SetupThresholdLabel(lblRam, "RAM");
@@ -49,7 +56,7 @@ namespace HWManager.Client
             // 임계값 요약 라벨
             lblThresholdSummary.Dock = DockStyle.Fill;
             lblThresholdSummary.TextAlign = ContentAlignment.MiddleLeft;
-            lblThresholdSummary.Font = new Font("맑은 고딕", 9F);
+            lblThresholdSummary.Font = new Font("맑은 고딕", 8.5F);
             lblThresholdSummary.ForeColor = Color.FromArgb(90, 90, 90);
             lblThresholdSummary.Text = "설정된 임계값 | CPU 80%  RAM 80%  GPU 80%";
 
@@ -63,12 +70,12 @@ namespace HWManager.Client
 
             // 컨트롤 패널 라벨/체크박스 (Text 는 디자이너가 유지해주지만 Dock 이 날아갈 수 있음)
             chkEnable.Dock = DockStyle.Fill;
-            chkEnable.Font = new Font("맑은 고딕", 10F, FontStyle.Bold);
+            chkEnable.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
             lblState.Dock = DockStyle.Fill;
-            lblState.Font = new Font("맑은 고딕", 10F, FontStyle.Bold);
+            lblState.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
             lblState.TextAlign = ContentAlignment.MiddleLeft;
             lblCurrentStatus.Dock = DockStyle.Fill;
-            lblCurrentStatus.Font = new Font("맑은 고딕", 9.5F);
+            lblCurrentStatus.Font = new Font("맑은 고딕", 9F);
             lblCurrentStatus.TextAlign = ContentAlignment.MiddleLeft;
 
             // 버튼 (Text + AutoSize + Click) — Click 핸들러는 디자이너가 매번 날려먹음
@@ -84,14 +91,14 @@ namespace HWManager.Client
             // 다른 버튼들은 AutoSize 로 텍스트만큼만 차지하고, 이 버튼만 Dock=Fill 로 전환.
             btnAddRecommend.AutoSize = false;
             btnAddRecommend.Dock = DockStyle.Fill;
-            btnAddRecommend.MinimumSize = new Size(0, 40);
-            btnAddRecommend.Margin = new Padding(3, 8, 3, 8);
+            btnAddRecommend.MinimumSize = new Size(0, 34);
+            btnAddRecommend.Margin = new Padding(3, 6, 3, 6);
 
             // ListView 컬럼 헤더 Text 가 유지되는지 방어
             colRecName.Text = "프로세스 이름";
             colRecMem.Text = "메모리 (MB)";
             lvRecommend.Dock = DockStyle.Fill;
-            lvRecommend.Font = new Font("맑은 고딕", 10F);
+            lvRecommend.Font = new Font("맑은 고딕", 9F);
             lvRecommend.FullRowSelect = true;
             lvRecommend.MultiSelect = true;
             lvRecommend.View = View.Details;
@@ -102,7 +109,7 @@ namespace HWManager.Client
             lbl.Text = text;
             lbl.Dock = DockStyle.Fill;
             lbl.TextAlign = ContentAlignment.MiddleLeft;
-            lbl.Font = new Font("맑은 고딕", 10F, FontStyle.Bold);
+            lbl.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
         }
 
         private static void SetupThresholdUnit(Label lbl)
@@ -110,7 +117,7 @@ namespace HWManager.Client
             lbl.Text = "%";
             lbl.Dock = DockStyle.Fill;
             lbl.TextAlign = ContentAlignment.MiddleLeft;
-            lbl.Font = new Font("맑은 고딕", 10F);
+            lbl.Font = new Font("맑은 고딕", 9F);
         }
 
         private static void SetupNud(NumericUpDown nud)
@@ -120,22 +127,22 @@ namespace HWManager.Client
             nud.Maximum = 100;
             nud.Increment = 5;
             nud.TextAlign = HorizontalAlignment.Right;
-            nud.Font = new Font("맑은 고딕", 10F);
-            nud.Margin = new Padding(3, 4, 3, 4);
+            nud.Font = new Font("맑은 고딕", 9F);
+            nud.Margin = new Padding(3, 2, 3, 2);
         }
 
         private static void SetupInput(TextBox tb, string placeholder)
         {
             tb.Dock = DockStyle.Fill;
-            tb.Font = new Font("맑은 고딕", 10F);
+            tb.Font = new Font("맑은 고딕", 9F);
             tb.PlaceholderText = placeholder;
-            tb.Margin = new Padding(3, 4, 3, 3);
+            tb.Margin = new Padding(3, 3, 3, 3);
         }
 
         private static void SetupListBox(ListBox lb)
         {
             lb.Dock = DockStyle.Fill;
-            lb.Font = new Font("맑은 고딕", 10F);
+            lb.Font = new Font("맑은 고딕", 9F);
             lb.IntegralHeight = false;
         }
 
@@ -148,9 +155,9 @@ namespace HWManager.Client
             btn.Text = text;
             btn.AutoSize = true;
             btn.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            btn.MinimumSize = new Size(80, 40);
-            btn.Padding = new Padding(16, 6, 16, 6);
-            btn.Margin = new Padding(3, 8, 3, 8);
+            btn.MinimumSize = new Size(75, 34);
+            btn.Padding = new Padding(12, 4, 12, 4);
+            btn.Margin = new Padding(3, 6, 3, 6);
             btn.Click -= onClick;
             btn.Click += onClick;
         }
@@ -182,7 +189,7 @@ namespace HWManager.Client
             rtbManual.ReadOnly = true;
             rtbManual.BackColor = Color.White;
             rtbManual.BorderStyle = BorderStyle.FixedSingle;
-            rtbManual.Font = new Font("맑은 고딕", 10);
+            rtbManual.Font = new Font("맑은 고딕", 9.5F);
             rtbManual.Text =
                 "■ 커스텀 기반 자원 관리 사용법\r\n" +
                 "\r\n" +
