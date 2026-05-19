@@ -1,52 +1,70 @@
-﻿using System;
+﻿using HWManager.Core.Models;
+using HWManager.Core.Services;
+using Microsoft.VisualBasic.Devices;
+using System;
 using System.Collections.Generic;
-using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using System.Diagnostics;
-using HWManager.Core.Models;
-using HWManager.Core.Services;
 
 namespace HWManager.Client
 {
     public partial class MainForm : Form
     {
-        // 정확한 수집을 위한 서비스 선언
         private HardwareMonitorService _monitorService = new HardwareMonitorService();
-        private System.Windows.Forms.Timer dbLogTimer;
+        private AlertService _alertService;
+        private System.Windows.Forms.Timer? dbLogTimer;
+        private Dictionary<string, DateTime> _lastAlertTime = new Dictionary<string, DateTime>();
 
         public MainForm()
         {
             InitializeComponent();
             ApplyModernStyle();
+            InitAlertService();
             InitDbLogTimer();
+        }
+
+        private void InitAlertService()
+        {
+            // 알림 설정 초기화
+            var alertSettings = new AlertSettings
+            {
+                CpuThreshold = 90f,
+                RamThreshold = 90f,
+                GpuThreshold = 90f
+            };
+
+            _alertService = new AlertService(alertSettings);
+            _alertService.AlertTriggered += AlertService_AlertTriggered;
         }
 
         private void InitDbLogTimer()
         {
-            //10초 주기 타이머 유지
             dbLogTimer = new System.Windows.Forms.Timer();
-            dbLogTimer.Interval = 10000; // 10초
+            dbLogTimer.Interval = 10000;
             dbLogTimer.Tick += DbLogTimer_Tick;
             dbLogTimer.Start();
         }
 
-        private void DbLogTimer_Tick(object sender, EventArgs e)
+        private void DbLogTimer_Tick(object? sender, EventArgs e)
         {
             try
             {
-                // 1. 서비스에서 정확한 데이터 스냅샷 가져오기
                 SystemSnapshot snapshot = _monitorService.GetCurrentStatus();
 
-                // 2. 팀원 DB 함수 호출 (하드웨어 저장)
                 DatabaseHelper.SaveHardwareLog(
                     snapshot.CpuUsage,
                     snapshot.RamUsage,
                     snapshot.GpuUsage
                 );
 
-                // 3. 프로세스 상위 10개 수집 및 저장
+                _alertService.CheckAndAlert(
+                    (float)snapshot.CpuUsage,
+                    snapshot.RamUsage,
+                    (float)snapshot.GpuUsage
+                );
+
                 var topProcs = Process.GetProcesses()
                                       .OrderByDescending(p => p.WorkingSet64)
                                       .Take(10)
@@ -55,7 +73,47 @@ namespace HWManager.Client
 
                 DatabaseHelper.SaveTop10ProcessRow(topProcs);
             }
-            catch { } // 예외 발생 시 무시
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"타이머 오류: {ex.Message}");
+            }
+        }
+
+        private void AlertService_AlertTriggered(object? sender, AlertEventArgs e)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => HandleAlert(e.AlertRecord)));
+                return;
+            }
+
+            HandleAlert(e.AlertRecord);
+        }
+
+        private void HandleAlert(AlertRecord record)
+        {
+            string alertKey = record.ResourceType;
+
+            if (_lastAlertTime.ContainsKey(alertKey))
+            {
+                var timeSinceLastAlert = DateTime.Now - _lastAlertTime[alertKey];
+                if (timeSinceLastAlert.TotalSeconds < 60)
+                {
+                    return;
+                }
+            }
+
+            _lastAlertTime[alertKey] = DateTime.Now;
+
+            string message = $"⚠️ {record.ResourceType} 알림\n\n" +
+                           $"사용량: {record.UsagePercentage:F1}%\n" +
+                           $"시간: {record.AlertTime:yyyy-MM-dd HH:mm:ss}";
+
+            MessageBox.Show(message, "시스템 알림",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+
+            DatabaseHelper.SaveAlertLog(record.ResourceType, record.UsagePercentage, record.Details);
         }
 
         private void ApplyModernStyle()
@@ -77,13 +135,13 @@ namespace HWManager.Client
             }
         }
 
-        private void btnMonitor_Click(object sender, EventArgs e)
+        private void btnMonitor_Click(object? sender, EventArgs e)
         {
             MonitorForm monitor = new MonitorForm();
             monitor.Show();
         }
 
-        private void btnProcess_Click(object sender, EventArgs e)
+        private void btnProcess_Click(object? sender, EventArgs e)
         {
             ProcessForm process = new ProcessForm();
             process.Show();
@@ -103,7 +161,6 @@ namespace HWManager.Client
             }
         }
 
-        // 프로그램 종료 시 하드웨어 리소스 해제
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             dbLogTimer?.Stop();
