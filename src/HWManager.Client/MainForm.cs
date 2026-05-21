@@ -163,8 +163,8 @@ namespace HWManager.Client
 
         private void btnSettings_Click(object sender, EventArgs e)
         {
-            // 설정 창 오픈 (추후 구현)
-            MessageBox.Show("설정 기능이 준비 중입니다.", "알림");
+            ConfigForm configForm = new ConfigForm();
+            configForm.ShowDialog();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

@@ -1,0 +1,45 @@
+[33ma3a2237[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32m26-feat설정기능을-위한-ui-변경[m[33m)[m ConfigForm.cs생성
+[33md66003b[m 메인 ui에 설정 버튼 추가
+[33mef25302[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;31morigin/26-feat설정기능을-위한-ui-변경[m[33m, [m[1;32m25-feat-설정-기능-추가[m[33m)[m Merge pull request #24 from KWU-HW-manager/19-feat-커스텀-자원-관리
+[33mad7ee84[m[33m ([m[1;31morigin/19-feat-커스텀-자원-관리[m[33m)[m Merge branch 'main' into 19-feat-커스텀-자원-관리
+[33m39ae6ea[m 커스텀 관리 기능 추가
+[33mbe2cdd7[m 커스텀 관리 기능 추가
+[33m9ae440d[m[33m ([m[1;31morigin/25-feat-설정-기능-추가[m[33m)[m Merge pull request #23 from KWU-HW-manager/17-feat-상태-알림-기능
+[33ma50adaf[m[33m ([m[1;31morigin/17-feat-상태-알림-기능[m[33m, [m[1;32m17-feat-상태-알림-기능[m[33m)[m 임계값 변수 동적으로 설정 가능하게 수정
+[33m11e85bc[m 임계값 cpu,ram,gpu 기준 분리
+[33m2250ddd[m Merge branch 'main' of https://github.com/KWU-HW-manager/hw-manager into 17-feat-상태-알림-기능
+[33me1ad2b2[m Merge pull request #22 from KWU-HW-manager/21-feat-gpu측정수정
+[33m4ce3214[m[33m ([m[1;31morigin/21-feat-gpu측정수정[m[33m, [m[1;32m21-feat-gpu측정수정[m[33m)[m gpu수정1차
+[33mb024465[m 알림 버그 수정
+[33m355c55f[m 외부라이브러리 변경 머지
+[33mc70caf1[m[33m ([m[1;31morigin/20-임시-브랜치[m[33m, [m[1;32m20-임시-브랜치[m[33m)[m Merge pull request #18 from KWU-HW-manager/feature/newlib
+[33meee0e73[m 알람 실행 버그 수장
+[33m37c2ff6[m mainform 알람 관련 코드 추가
+[33m2fff562[m AlertService 클래스 생성
+[33mea371af[m AlertRecord 클래스 생성
+[33m7d61053[m[33m ([m[1;31morigin/feature/newlib[m[33m)[m 외부라이브러리 추가 ver.2
+[33m6f7bb64[m 외부라이브러리 추가 ver
+[33ma68549d[m GPU 또또또수정
+[33mc0fb6a9[m GPU 또또수정
+[33m8be1c98[m GPU 측정 방식 변경(노트북에서도 작동하도록) 목록 새로고침, 프로세스 종료를 flowlayoutPanel로 묶어 배율과 상관없이 잘 보이도록 함.
+[33mdf5c2f9[m[33m ([m[1;31morigin/feature/UI수정및테이블레이아웃-추가[m[33m)[m UI수정 및 테이블 레이아웃 추가. 프로세스 종료 기능 강화.
+[33m1f3a7b2[m Merge pull request #13 from KWU-HW-manager/12-feat실시간-하드웨어프로세스-점유율-데이터베이스-기록-및-조회-기능-구현
+[33m2ed83f1[m[33m ([m[1;31morigin/12-feat실시간-하드웨어프로세스-점유율-데이터베이스-기록-및-조회-기능-구현[m[33m)[m db logging
+[33m037ae7f[m Merge pull request #11 from KWU-HW-manager/8-feature최최종본
+[33mbb02acb[m 하드웨어/프로세스 로그 기록 및 조회 가능
+[33m31ddace[m[33m ([m[1;31morigin/8-feature최최종본[m[33m)[m UI 와 비즈니스 로직 분리
+[33m2159b8c[m /최최종본
+[33m71b997d[m Merge pull request #10 from KWU-HW-manager/9-featdatabasehelpercs-추가
+[33m0eaffb7[m[33m ([m[1;31morigin/9-featdatabasehelpercs-추가[m[33m)[m 데이터베이스 클래스 추가
+[33m4ec121b[m Merge pull request #7 from KWU-HW-manager/feature/실시간그래프
+[33m79e0626[m[33m ([m[1;31morigin/feature/실시간그래프[m[33m)[m <뼈대완성>
+[33ma248f20[m 나머지 ram, gpu 그래프도 완성
+[33mf899d69[m <뼈대 수정 후 버전> 1. 메인 화면 (MainForm) 카드형 UI 변경: 윈도우 11 스타일로 배경은 연회색, 버튼은 흰색 카드 느낌으로 구성함.
+[33mc7a2106[m mainform text를 바꿈(메인폼상단왼쪽 제목같은거)
+[33ma94095a[m Merge pull request #2 from KWU-HW-manager/feature/skeleton
+[33m7e59888[m[33m ([m[1;31morigin/feature/skeleton[m[33m)[m 기본 UI 뼈대
+[33mcd80fba[m 연습 겸 기존 프로그램 넣어봤습니다
+[33md4dbb4b[m 기본 구조 추가
+[33m16bba73[m 기본 구조 추가
+[33m3102412[m .gitignore 추가
+[33m0d69b22[m Initial commit
