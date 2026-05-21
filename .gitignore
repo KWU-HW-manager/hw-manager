@@ -445,3 +445,6 @@ Thumbs.db
 # 민감 정보
 *.pfx
 secrets.json
+
+CLAUDE.md
+.claude

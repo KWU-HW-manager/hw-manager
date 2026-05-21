@@ -114,5 +114,12 @@ namespace HWManager.Client
             lblRAM.Text = $"RAM 사용량: {s.RamUsage:F1}%";
             lblGPU.Text = $"GPU 사용량: {s.GpuUsage:F1}%";
         }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            timer1.Stop();
+            _monitorService.Dispose();
+            base.OnFormClosing(e);
+        }
     }
 }

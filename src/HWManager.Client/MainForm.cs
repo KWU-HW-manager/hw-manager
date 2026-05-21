@@ -121,7 +121,7 @@ namespace HWManager.Client
             this.BackColor = Color.FromArgb(243, 243, 243);
             this.Text = "HWManager - Dashboard";
 
-            var buttons = new List<Button> { btnMonitor, btnProcess, btnExit };
+            var buttons = new List<Button> { btnMonitor, btnProcess, btnFocusMode, btnExit };
 
             foreach (var btn in buttons)
             {
@@ -147,7 +147,13 @@ namespace HWManager.Client
             process.Show();
         }
 
-        private void btnExit_Click(object? sender, EventArgs e)
+        private void btnFocusMode_Click(object sender, EventArgs e)
+        {
+            FocusModeForm focus = new FocusModeForm();
+            focus.Show();
+        }
+
+        private void btnExit_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("프로그램을 종료하시겠습니까?", "종료", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
@@ -157,6 +163,7 @@ namespace HWManager.Client
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            dbLogTimer?.Stop();
             _monitorService?.Dispose();
             base.OnFormClosing(e);
         }
