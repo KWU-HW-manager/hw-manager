@@ -121,7 +121,7 @@ namespace HWManager.Client
             this.BackColor = Color.FromArgb(243, 243, 243);
             this.Text = "HWManager - Dashboard";
 
-            var buttons = new List<Button> { btnMonitor, btnProcess, btnFocusMode, btnExit };
+            var buttons = new List<Button> { btnMonitor, btnProcess, btnFocusMode, btnExit, btnSettings };
 
             foreach (var btn in buttons)
             {
@@ -159,6 +159,12 @@ namespace HWManager.Client
             {
                 Application.Exit();
             }
+        }
+
+        private void btnSettings_Click(object sender, EventArgs e)
+        {
+            // 설정 창 오픈 (추후 구현)
+            MessageBox.Show("설정 기능이 준비 중입니다.", "알림");
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

@@ -21,6 +21,7 @@ namespace HWManager.Client
             btnProcess = new Button();
             btnFocusMode = new Button();
             btnExit = new Button();
+            btnSettings = new Button();
             tableLayoutPanel1 = new TableLayoutPanel();
             tableLayoutPanel1.SuspendLayout();
             SuspendLayout();
@@ -36,17 +37,37 @@ namespace HWManager.Client
             ConfigureCardButton(btnFocusMode, "커스텀 자원 관리", 2);
             btnFocusMode.Click += btnFocusMode_Click;
 
-            ConfigureCardButton(btnExit, "종료", 3);
+            // 하단 버튼들 (종료, 설정)
+            btnExit.Dock = DockStyle.Fill;
+            btnExit.Margin = new Padding(40, 15, 40, 15);
+            btnExit.Name = "btnExit";
+            btnExit.TabIndex = 3;
+            btnExit.Text = "종료";
+            btnExit.UseVisualStyleBackColor = true;
             btnExit.Click += btnExit_Click;
+
+            ConfigureCardButton(btnSettings, "설정", 4);
+            btnSettings.Click += btnSettings_Click;
 
             tableLayoutPanel1.Dock = DockStyle.Fill;
             tableLayoutPanel1.BackColor = Color.WhiteSmoke;
-            tableLayoutPanel1.ColumnCount = 1;
-            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tableLayoutPanel1.ColumnCount = 2;
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+          
             tableLayoutPanel1.Controls.Add(btnMonitor, 0, 0);
+            tableLayoutPanel1.SetColumnSpan(btnMonitor, 2);
+
             tableLayoutPanel1.Controls.Add(btnProcess, 0, 1);
+            tableLayoutPanel1.SetColumnSpan(btnProcess, 2);
+
             tableLayoutPanel1.Controls.Add(btnFocusMode, 0, 2);
-            tableLayoutPanel1.Controls.Add(btnExit, 0, 3);
+            tableLayoutPanel1.SetColumnSpan(btnFocusMode, 2);
+
+            //tableLayoutPanel1.Controls.Add(btnExit, 0, 3);
+            //tableLayoutPanel1.Controls.Add(btnSettings, 1, 3);
+            tableLayoutPanel1.Controls.Add(btnExit, 1, 3);
+            tableLayoutPanel1.Controls.Add(btnSettings, 0, 3);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
             tableLayoutPanel1.RowCount = 4;
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
@@ -88,6 +109,7 @@ namespace HWManager.Client
         private Button btnProcess;
         private Button btnFocusMode;
         private Button btnExit;
+        private Button btnSettings;
         private TableLayoutPanel tableLayoutPanel1;
     }
 }
