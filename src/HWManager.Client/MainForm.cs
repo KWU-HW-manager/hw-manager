@@ -121,7 +121,7 @@ namespace HWManager.Client
             this.BackColor = Color.FromArgb(243, 243, 243);
             this.Text = "HWManager - Dashboard";
 
-            var buttons = new List<Button> { btnMonitor, btnProcess, btnFocusMode, btnExit };
+            var buttons = new List<Button> { btnMonitor, btnProcess, btnFocusMode, btnExit, btnSettings };
 
             foreach (var btn in buttons)
             {
@@ -159,6 +159,12 @@ namespace HWManager.Client
             {
                 Application.Exit();
             }
+        }
+
+        private void btnSettings_Click(object sender, EventArgs e)
+        {
+            ConfigForm configForm = new ConfigForm();
+            configForm.ShowDialog();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
