@@ -111,19 +111,6 @@ namespace HWManager.Client
 
         private void HandleAlert(AlertRecord record)
         {
-            string alertKey = record.ResourceType;
-
-            if (_lastAlertTime.ContainsKey(alertKey))
-            {
-                var timeSinceLastAlert = DateTime.Now - _lastAlertTime[alertKey];
-                if (timeSinceLastAlert.TotalSeconds < 60)
-                {
-                    return;
-                }
-            }
-
-            _lastAlertTime[alertKey] = DateTime.Now;
-
             string title = $"⚠️ {record.ResourceType} 알림";
             string message = record.Details;
 
