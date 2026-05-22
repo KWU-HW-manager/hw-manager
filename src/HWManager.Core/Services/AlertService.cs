@@ -5,7 +5,7 @@ using HWManager.Core.Models;
 namespace HWManager.Core.Services
 {
     /// <summary>
-    /// 알림 이벤트 인자
+    /// 알림 이벤트 args
     /// </summary>
     public class AlertEventArgs : EventArgs
     {
@@ -14,9 +14,9 @@ namespace HWManager.Core.Services
 
     public class AlertService
     {
-        private const int ALERT_COOLDOWN_SECONDS = 60; // 고정된 중복 방지 시간
         private AlertSettings _settings;
         private List<AlertRecord> _alertHistory = new List<AlertRecord>();
+        private Dictionary<string, DateTime> _lastAlertTime = new Dictionary<string, DateTime>();
 
         /// <summary>
         /// 알림 발생 이벤트
@@ -25,12 +25,12 @@ namespace HWManager.Core.Services
 
         public AlertService(AlertSettings settings = null)
         {
-            // 기본값 또는 외부에서 전달된 설정 사용
+            // 기본값 또는 외부에서 주입된 설정 사용
             _settings = settings ?? new AlertSettings();
         }
 
         /// <summary>
-        /// 사용량을 확인하고 임계값 초과 시 알림 발생
+        /// 자원량을 확인하고 임계값 넘으면 알림 발생
         /// </summary>
         public void CheckAndAlert(float cpuUsage, double ramUsage, float gpuUsage)
         {
@@ -43,12 +43,25 @@ namespace HWManager.Core.Services
         {
             if (usage >= threshold)
             {
+                // 알림 간격 확인 (쿨다운 적용)
+                string alertKey = resourceType;
+                if (_lastAlertTime.ContainsKey(alertKey))
+                {
+                    var timeSinceLastAlert = DateTime.Now - _lastAlertTime[alertKey];
+                    if (timeSinceLastAlert.TotalSeconds < _settings.AlertInterval)
+                    {
+                        return;
+                    }
+                }
+
+                _lastAlertTime[alertKey] = DateTime.Now;
+
                 var record = new AlertRecord
                 {
                     ResourceType = resourceType,
                     UsagePercentage = usage,
                     AlertTime = DateTime.Now,
-                    Details = $"{resourceType} 사용량이 {usage:F1}%에 도달했습니다. (임계값: {threshold}%)"
+                    Details = $"{resourceType} 사용률이 {usage:F1}%에 도달했습니다. (임계값: {threshold}%)"
                 };
 
                 _alertHistory.Add(record);
@@ -65,7 +78,7 @@ namespace HWManager.Core.Services
         }
 
         /// <summary>
-        /// 임계값 설정 변경
+        /// 임계값 설정 업데이트
         /// </summary>
         public void UpdateSettings(AlertSettings settings)
         {
@@ -76,7 +89,7 @@ namespace HWManager.Core.Services
         }
 
         /// <summary>
-        /// 현재 설정 조회
+        /// 현재 설정 반환
         /// </summary>
         public AlertSettings GetSettings()
         {
@@ -84,7 +97,7 @@ namespace HWManager.Core.Services
         }
 
         /// <summary>
-        /// 알림 기록 조회
+        /// 알림 기록 반환
         /// </summary>
         public List<AlertRecord> GetAlertHistory()
         {
@@ -97,6 +110,7 @@ namespace HWManager.Core.Services
         public void ClearHistory()
         {
             _alertHistory.Clear();
+            _lastAlertTime.Clear();
         }
     }
 }

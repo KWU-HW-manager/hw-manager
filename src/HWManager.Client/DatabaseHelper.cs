@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.SQLite;
+using HWManager.Core.Models;
 
 namespace HWManager.Client
 {
@@ -14,7 +15,9 @@ namespace HWManager.Client
             using (var conn = new SQLiteConnection(connString))
             {
                 conn.Open();
-                string sql = @"CREATE TABLE IF NOT EXISTS Logs (
+                
+                // Logs 테이블
+                string sqlLogs = @"CREATE TABLE IF NOT EXISTS Logs (
                                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 LogTime DATETIME DEFAULT (datetime('now','localtime')),
                                 Category TEXT,
@@ -24,7 +27,16 @@ namespace HWManager.Client
                                 P1 TEXT, P2 TEXT, P3 TEXT, P4 TEXT, P5 TEXT, 
                                 P6 TEXT, P7 TEXT, P8 TEXT, P9 TEXT, P10 TEXT,
                                 ProcessInfo TEXT)";
-                using (var cmd = new SQLiteCommand(sql, conn))
+                using (var cmd = new SQLiteCommand(sqlLogs, conn))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+                
+                // Settings 테이블 (설정값 저장용)
+                string sqlSettings = @"CREATE TABLE IF NOT EXISTS Settings (
+                                Key TEXT PRIMARY KEY,
+                                Value TEXT)";
+                using (var cmd = new SQLiteCommand(sqlSettings, conn))
                 {
                     cmd.ExecuteNonQuery();
                 }
@@ -156,6 +168,105 @@ namespace HWManager.Client
                 }
             }
             return dt;
+        }
+
+        /// <summary>
+        /// 설정값 저장
+        /// </summary>
+        public static void SaveAlertSettings(AlertSettings settings)
+        {
+            try
+            {
+                using (var conn = new SQLiteConnection(connString))
+                {
+                    conn.Open();
+                    
+                    // 기존 설정 삭제 후 저장
+                    string sqlDelete = "DELETE FROM Settings WHERE Key LIKE 'AlertSettings_%'";
+                    using (var cmd = new SQLiteCommand(sqlDelete, conn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    string sqlInsert = @"INSERT INTO Settings (Key, Value) VALUES (@key, @value)";
+                    
+                    var settingsData = new[]
+                    {
+                        ("AlertSettings_CpuThreshold", settings.CpuThreshold.ToString()),
+                        ("AlertSettings_RamThreshold", settings.RamThreshold.ToString()),
+                        ("AlertSettings_GpuThreshold", settings.GpuThreshold.ToString()),
+                        ("AlertSettings_AlertInterval", settings.AlertInterval.ToString()),
+                        ("AlertSettings_IsEnabled", settings.IsEnabled.ToString())
+                    };
+
+                    foreach (var (key, value) in settingsData)
+                    {
+                        using (var cmd = new SQLiteCommand(sqlInsert, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@key", key);
+                            cmd.Parameters.AddWithValue("@value", value);
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// 저장된 설정값 로드
+        /// </summary>
+        public static AlertSettings LoadAlertSettings()
+        {
+            var settings = new AlertSettings();
+
+            try
+            {
+                using (var conn = new SQLiteConnection(connString))
+                {
+                    conn.Open();
+                    string sql = "SELECT Key, Value FROM Settings WHERE Key LIKE 'AlertSettings_%'";
+                    
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    {
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string key = reader["Key"].ToString();
+                                string value = reader["Value"].ToString();
+
+                                switch (key)
+                                {
+                                    case "AlertSettings_CpuThreshold":
+                                        if (float.TryParse(value, out float cpuThreshold))
+                                            settings.CpuThreshold = cpuThreshold;
+                                        break;
+                                    case "AlertSettings_RamThreshold":
+                                        if (float.TryParse(value, out float ramThreshold))
+                                            settings.RamThreshold = ramThreshold;
+                                        break;
+                                    case "AlertSettings_GpuThreshold":
+                                        if (float.TryParse(value, out float gpuThreshold))
+                                            settings.GpuThreshold = gpuThreshold;
+                                        break;
+                                    case "AlertSettings_AlertInterval":
+                                        if (int.TryParse(value, out int alertInterval))
+                                            settings.AlertInterval = alertInterval;
+                                        break;
+                                    case "AlertSettings_IsEnabled":
+                                        if (bool.TryParse(value, out bool isEnabled))
+                                            settings.IsEnabled = isEnabled;
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return settings;
         }
     }
 }

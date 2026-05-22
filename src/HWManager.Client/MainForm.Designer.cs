@@ -43,6 +43,8 @@ namespace HWManager.Client
             btnExit.Name = "btnExit";
             btnExit.TabIndex = 3;
             btnExit.Text = "종료";
+            btnExit.Font = new Font("맑은 고딕", 11F, FontStyle.Bold, GraphicsUnit.Point, 129);
+     
             btnExit.UseVisualStyleBackColor = true;
             btnExit.Click += btnExit_Click;
 
@@ -100,6 +102,7 @@ namespace HWManager.Client
             btn.Name = "btn_" + tabIndex;
             btn.TabIndex = tabIndex;
             btn.Text = caption;
+            btn.Font = new Font("맑은 고딕", 11F, FontStyle.Bold, GraphicsUnit.Point, 129);
             btn.UseVisualStyleBackColor = true;
         }
 
