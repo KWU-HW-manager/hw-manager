@@ -276,7 +276,7 @@ namespace HWManager.Client
             nudAlertInterval.Font = new Font("¸¼Àº °íµñ", 9F);
             nudAlertInterval.Increment = new decimal(new int[] { 10, 0, 0, 0 });
             nudAlertInterval.Location = new Point(123, 153);
-            nudAlertInterval.Maximum = new decimal(new int[] { 300, 0, 0, 0 });
+            nudAlertInterval.Maximum = new decimal(new int[] { 999999, 0, 0, 0 });
             nudAlertInterval.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             nudAlertInterval.Name = "nudAlertInterval";
             nudAlertInterval.Size = new Size(74, 27);
