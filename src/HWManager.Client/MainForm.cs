@@ -73,11 +73,16 @@ namespace HWManager.Client
                     snapshot.GpuUsage
                 );
 
-                _alertService.CheckAndAlert(
-                    (float)snapshot.CpuUsage,
-                    snapshot.RamUsage,
-                    (float)snapshot.GpuUsage
-                );
+                // 알림 기능이 활성화된 경우에만 알림 체크
+                var currentSettings = _alertService.GetSettings();
+                if (currentSettings.IsEnabled)
+                {
+                    _alertService.CheckAndAlert(
+                        (float)snapshot.CpuUsage,
+                        snapshot.RamUsage,
+                        (float)snapshot.GpuUsage
+                    );
+                }
 
                 var topProcs = Process.GetProcesses()
                                       .OrderByDescending(p => p.WorkingSet64)
