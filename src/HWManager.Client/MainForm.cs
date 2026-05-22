@@ -1,5 +1,5 @@
-﻿using HWManager.Core.Models;
-using HWManager.Core.Services;
+﻿using HWManager.Core.Services;
+using HWManager.Core.Models;
 using Microsoft.VisualBasic.Devices;
 using System;
 using System.Collections.Generic;
@@ -27,16 +27,30 @@ namespace HWManager.Client
 
         private void InitAlertService()
         {
-            // 알림 설정 초기화
-            var alertSettings = new AlertSettings
+            AlertSettings alertSettings = null;
+            
+            try
             {
-                CpuThreshold = 90f,
-                RamThreshold = 90f,
-                GpuThreshold = 90f
-            };
+                // 데이터베이스에서 저장된 알림 설정 로드
+                alertSettings = DatabaseHelper.LoadAlertSettings();
+            }
+            catch
+            {
+                // DB 로드 실패시 기본값 사용
+                alertSettings = new AlertSettings();
+            }
 
             _alertService = new AlertService(alertSettings);
             _alertService.AlertTriggered += AlertService_AlertTriggered;
+        }
+
+        /// <summary>
+        /// AlertService 설정 업데이트 (ConfigForm에서 호출)
+        /// </summary>
+        public void RefreshAlertSettings()
+        {
+            var alertSettings = DatabaseHelper.LoadAlertSettings();
+            _alertService.UpdateSettings(alertSettings);
         }
 
         private void InitDbLogTimer()
@@ -105,34 +119,17 @@ namespace HWManager.Client
 
             _lastAlertTime[alertKey] = DateTime.Now;
 
-            string message = $"⚠️ {record.ResourceType} 알림\n\n" +
-                           $"사용량: {record.UsagePercentage:F1}%\n" +
-                           $"시간: {record.AlertTime:yyyy-MM-dd HH:mm:ss}";
+            string title = $"⚠️ {record.ResourceType} 알림";
+            string message = record.Details;
 
-            MessageBox.Show(message, "시스템 알림",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
-
+            MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             DatabaseHelper.SaveAlertLog(record.ResourceType, record.UsagePercentage, record.Details);
         }
 
         private void ApplyModernStyle()
         {
             this.BackColor = Color.FromArgb(243, 243, 243);
-            this.Text = "HWManager - Dashboard";
-
-            var buttons = new List<Button> { btnMonitor, btnProcess, btnFocusMode, btnExit, btnSettings };
-
-            foreach (var btn in buttons)
-            {
-                btn.FlatStyle = FlatStyle.Flat;
-                btn.FlatAppearance.BorderSize = 0;
-                btn.BackColor = Color.White;
-                btn.Cursor = Cursors.Hand;
-                btn.Font = new Font("맑은 고딕", 11, FontStyle.Bold);
-                btn.MouseEnter += (s, e) => { btn.BackColor = Color.FromArgb(235, 235, 235); };
-                btn.MouseLeave += (s, e) => { btn.BackColor = Color.White; };
-            }
+            this.Font = new Font("맑은 고딕", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 129);
         }
 
         private void btnMonitor_Click(object? sender, EventArgs e)
@@ -163,7 +160,7 @@ namespace HWManager.Client
 
         private void btnSettings_Click(object sender, EventArgs e)
         {
-            ConfigForm configForm = new ConfigForm();
+            ConfigForm configForm = new ConfigForm(this);
             configForm.ShowDialog();
         }
 

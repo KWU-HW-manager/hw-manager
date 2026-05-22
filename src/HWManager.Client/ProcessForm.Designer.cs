@@ -63,20 +63,18 @@
             tabControl1.Controls.Add(tabPage2);
             tabControl1.Dock = DockStyle.Fill;
             tabControl1.Location = new Point(0, 0);
-            tabControl1.Margin = new Padding(2);
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
-            tabControl1.Size = new Size(800, 450);
+            tabControl1.Size = new Size(1029, 600);
             tabControl1.TabIndex = 0;
             // 
             // tabPage1
             // 
             tabPage1.Controls.Add(tableLayoutPanel1);
-            tabPage1.Location = new Point(4, 24);
-            tabPage1.Margin = new Padding(2);
+            tabPage1.Location = new Point(4, 29);
             tabPage1.Name = "tabPage1";
-            tabPage1.Padding = new Padding(2);
-            tabPage1.Size = new Size(792, 422);
+            tabPage1.Padding = new Padding(3);
+            tabPage1.Size = new Size(1021, 567);
             tabPage1.TabIndex = 0;
             tabPage1.Text = "실시간 모니터링";
             tabPage1.UseVisualStyleBackColor = true;
@@ -89,24 +87,26 @@
             tableLayoutPanel1.Controls.Add(lvProcesses, 0, 1);
             tableLayoutPanel1.Controls.Add(panel2, 0, 0);
             tableLayoutPanel1.Dock = DockStyle.Fill;
-            tableLayoutPanel1.Location = new Point(2, 2);
+            tableLayoutPanel1.Location = new Point(3, 3);
+            tableLayoutPanel1.Margin = new Padding(4);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
-            tableLayoutPanel1.Padding = new Padding(10);
+            tableLayoutPanel1.Padding = new Padding(13);
             tableLayoutPanel1.RowCount = 3;
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 90F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 120F));
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 70F));
-            tableLayoutPanel1.Size = new Size(788, 418);
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 93F));
+            tableLayoutPanel1.Size = new Size(1015, 561);
             tableLayoutPanel1.TabIndex = 4;
             // 
             // panel1
             // 
             panel1.Controls.Add(flowLayoutPanel1);
             panel1.Dock = DockStyle.Fill;
-            panel1.Location = new Point(13, 341);
+            panel1.Location = new Point(17, 459);
+            panel1.Margin = new Padding(4);
             panel1.Name = "panel1";
-            panel1.Padding = new Padding(0, 0, 15, 0);
-            panel1.Size = new Size(762, 64);
+            panel1.Padding = new Padding(0, 0, 19, 0);
+            panel1.Size = new Size(981, 85);
             panel1.TabIndex = 0;
             // 
             // flowLayoutPanel1
@@ -116,15 +116,17 @@
             flowLayoutPanel1.Dock = DockStyle.Fill;
             flowLayoutPanel1.FlowDirection = FlowDirection.RightToLeft;
             flowLayoutPanel1.Location = new Point(0, 0);
+            flowLayoutPanel1.Margin = new Padding(4);
             flowLayoutPanel1.Name = "flowLayoutPanel1";
-            flowLayoutPanel1.Size = new Size(747, 64);
+            flowLayoutPanel1.Size = new Size(962, 85);
             flowLayoutPanel1.TabIndex = 3;
             // 
             // btnKill
             // 
-            btnKill.Location = new Point(648, 3);
+            btnKill.Location = new Point(835, 4);
+            btnKill.Margin = new Padding(4);
             btnKill.Name = "btnKill";
-            btnKill.Size = new Size(96, 23);
+            btnKill.Size = new Size(123, 31);
             btnKill.TabIndex = 2;
             btnKill.Text = "프로세스 종료";
             btnKill.UseVisualStyleBackColor = true;
@@ -133,9 +135,10 @@
             // btnRefresh
             // 
             btnRefresh.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnRefresh.Location = new Point(542, 3);
+            btnRefresh.Location = new Point(698, 4);
+            btnRefresh.Margin = new Padding(4);
             btnRefresh.Name = "btnRefresh";
-            btnRefresh.Size = new Size(100, 23);
+            btnRefresh.Size = new Size(129, 31);
             btnRefresh.TabIndex = 1;
             btnRefresh.Text = "목록 새로고침";
             btnRefresh.UseVisualStyleBackColor = true;
@@ -146,10 +149,10 @@
             lvProcesses.Columns.AddRange(new ColumnHeader[] { columnHeader1, columnHeader2, columnHeader3 });
             lvProcesses.Dock = DockStyle.Fill;
             lvProcesses.FullRowSelect = true;
-            lvProcesses.Location = new Point(25, 103);
-            lvProcesses.Margin = new Padding(15, 3, 15, 3);
+            lvProcesses.Location = new Point(32, 137);
+            lvProcesses.Margin = new Padding(19, 4, 19, 4);
             lvProcesses.Name = "lvProcesses";
-            lvProcesses.Size = new Size(738, 232);
+            lvProcesses.Size = new Size(951, 314);
             lvProcesses.TabIndex = 0;
             lvProcesses.UseCompatibleStateImageBehavior = false;
             lvProcesses.View = View.Details;
@@ -175,19 +178,21 @@
             panel2.Controls.Add(lblSummary);
             panel2.Controls.Add(txtSearch);
             panel2.Dock = DockStyle.Fill;
-            panel2.Location = new Point(13, 13);
+            panel2.Location = new Point(17, 17);
+            panel2.Margin = new Padding(4);
             panel2.Name = "panel2";
-            panel2.Padding = new Padding(15);
-            panel2.Size = new Size(762, 84);
+            panel2.Padding = new Padding(19, 20, 19, 20);
+            panel2.Size = new Size(981, 112);
             panel2.TabIndex = 1;
             // 
             // lblSummary
             // 
             lblSummary.AutoSize = true;
             lblSummary.Dock = DockStyle.Top;
-            lblSummary.Location = new Point(15, 38);
+            lblSummary.Location = new Point(19, 47);
+            lblSummary.Margin = new Padding(4, 0, 4, 0);
             lblSummary.Name = "lblSummary";
-            lblSummary.Size = new Size(223, 15);
+            lblSummary.Size = new Size(277, 20);
             lblSummary.TabIndex = 1;
             lblSummary.Text = "\"총 프로세스: 0개 | 메모리 사용량: 0GB\"";
             lblSummary.TextAlign = ContentAlignment.MiddleLeft;
@@ -195,22 +200,21 @@
             // txtSearch
             // 
             txtSearch.Dock = DockStyle.Top;
-            txtSearch.Location = new Point(15, 15);
-            txtSearch.Margin = new Padding(0, 0, 0, 10);
+            txtSearch.Location = new Point(19, 20);
+            txtSearch.Margin = new Padding(0, 0, 0, 13);
             txtSearch.Name = "txtSearch";
             txtSearch.PlaceholderText = "프로세스 검색...";
-            txtSearch.Size = new Size(732, 23);
+            txtSearch.Size = new Size(943, 27);
             txtSearch.TabIndex = 0;
             txtSearch.TextChanged += textBox1_TextChanged;
             // 
             // tabPage2
             // 
             tabPage2.Controls.Add(tableLayoutPanel2);
-            tabPage2.Location = new Point(4, 24);
-            tabPage2.Margin = new Padding(2);
+            tabPage2.Location = new Point(4, 29);
             tabPage2.Name = "tabPage2";
-            tabPage2.Padding = new Padding(2);
-            tabPage2.Size = new Size(792, 422);
+            tabPage2.Padding = new Padding(3);
+            tabPage2.Size = new Size(1021, 567);
             tabPage2.TabIndex = 1;
             tabPage2.Text = "로그 기록 조회";
             tabPage2.UseVisualStyleBackColor = true;
@@ -222,22 +226,22 @@
             tableLayoutPanel2.Controls.Add(btnRefreshLogs, 0, 0);
             tableLayoutPanel2.Controls.Add(dgvProcessLog, 0, 1);
             tableLayoutPanel2.Dock = DockStyle.Fill;
-            tableLayoutPanel2.Location = new Point(2, 2);
+            tableLayoutPanel2.Location = new Point(3, 3);
+            tableLayoutPanel2.Margin = new Padding(4);
             tableLayoutPanel2.Name = "tableLayoutPanel2";
             tableLayoutPanel2.RowCount = 2;
             tableLayoutPanel2.RowStyles.Add(new RowStyle());
             tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            tableLayoutPanel2.Size = new Size(788, 418);
+            tableLayoutPanel2.Size = new Size(1015, 561);
             tableLayoutPanel2.TabIndex = 2;
             // 
             // btnRefreshLogs
             // 
             btnRefreshLogs.Anchor = AnchorStyles.Left;
             btnRefreshLogs.AutoSize = true;
-            btnRefreshLogs.Location = new Point(2, 2);
-            btnRefreshLogs.Margin = new Padding(2);
+            btnRefreshLogs.Location = new Point(3, 3);
             btnRefreshLogs.Name = "btnRefreshLogs";
-            btnRefreshLogs.Size = new Size(78, 25);
+            btnRefreshLogs.Size = new Size(102, 40);
             btnRefreshLogs.TabIndex = 0;
             btnRefreshLogs.Text = "새로고침";
             btnRefreshLogs.UseVisualStyleBackColor = true;
@@ -247,19 +251,19 @@
             // 
             dgvProcessLog.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvProcessLog.Dock = DockStyle.Fill;
-            dgvProcessLog.Location = new Point(2, 31);
-            dgvProcessLog.Margin = new Padding(2);
+            dgvProcessLog.Location = new Point(3, 49);
             dgvProcessLog.Name = "dgvProcessLog";
             dgvProcessLog.RowHeadersWidth = 62;
-            dgvProcessLog.Size = new Size(784, 385);
+            dgvProcessLog.Size = new Size(1009, 509);
             dgvProcessLog.TabIndex = 1;
             // 
             // ProcessForm
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(9F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(1029, 600);
             Controls.Add(tabControl1);
+            Margin = new Padding(4);
             Name = "ProcessForm";
             Text = "ProcessForm";
             tabControl1.ResumeLayout(false);
