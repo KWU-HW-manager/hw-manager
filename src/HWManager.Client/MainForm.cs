@@ -141,6 +141,11 @@ namespace HWManager.Client
             FocusModeForm focus = new FocusModeForm();
             focus.Show();
         }
+        private void btnStatistics_Click(object sender, EventArgs e)
+        {
+            StatisticsForm statistics = new StatisticsForm();
+            statistics.Show();
+        }
 
         private void btnExit_Click(object sender, EventArgs e)
         {
