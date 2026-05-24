@@ -83,5 +83,25 @@ namespace HWManager.Core.Services
                 System.Diagnostics.Debug.WriteLine($"오버레이 데이터 전송 실패: {ex.Message}");
             }
         }
+
+        // 오버레이 창 투명도 설정 (0.0 ~ 1.0)
+        public void SetOpacity(double opacity)
+        {
+            if (_windowInstance == null) return;
+            var type = _windowInstance.GetType();
+
+            // WPF Window의 Opacity 속성을 직접 변경
+            type.GetProperty("Opacity")?.SetValue(_windowInstance, opacity);
+        }
+
+        // 오버레이 창 크기 설정 (0.5 ~ 1.5)
+        public void SetScale(double scale)
+        {
+            if (_windowInstance == null) return;
+            var type = _windowInstance.GetType();
+
+            // WPF 창의 SetScale 메서드를 호출합니다.
+            type.GetMethod("SetScale")?.Invoke(_windowInstance, new object[] { scale });
+        }
     }
 }

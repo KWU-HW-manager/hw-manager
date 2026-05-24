@@ -19,6 +19,9 @@ namespace HWManager.Client
         // 오버레이 서비스 및 타이머 변수 추가
         private readonly IOverlayService _overlayService = new OverlayService();
         private System.Timers.Timer? _overlayTimer;
+        public bool IsOverlayEnabled = false; // 오버레이 실시간 On/Off 상태
+        public double OverlayOpacity = 0.8; // 오버레이 투명도 기본값
+        public double OverlayScale = 1.0; // 오버레이 크기 기본값 (1.0 = 100%)
 
         public MainForm()
         {
@@ -29,14 +32,16 @@ namespace HWManager.Client
             InitOverlayTimer();
         }
 
-        // DB 설정에 따라 오버레이 스위치 토글
         public void ApplyOverlaySettings()
         {
-            bool isEnabled = DatabaseHelper.LoadOverlaySettings();
-            if (isEnabled)
+            if (IsOverlayEnabled)
             {
                 _overlayTimer?.Start();
                 _overlayService?.ShowOverlay();
+
+                var service = _overlayService as OverlayService;
+                service?.SetOpacity(OverlayOpacity);
+                service?.SetScale(OverlayScale);
             }
             else
             {
@@ -52,7 +57,14 @@ namespace HWManager.Client
             _overlayTimer.Interval = 1000;
             _overlayTimer.Elapsed += OverlayTimer_Elapsed;
 
-            // 변경: 무조건 켜지 않고 DB 설정을 검사하여 구동
+            // on/off 상태 최초 로드
+            IsOverlayEnabled = DatabaseHelper.LoadOverlaySettings();
+
+            // 세부 수치 따로 로드
+            DatabaseHelper.LoadOverlayVisuals(out double opacity, out double scale);
+            OverlayOpacity = opacity;
+            OverlayScale = scale;
+
             ApplyOverlaySettings();
         }
 

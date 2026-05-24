@@ -312,5 +312,63 @@ namespace HWManager.Client
 
             return false; // 데이터가 없거나 에러 시 기본값은 꺼짐
         }
+
+        // 투명도와 크기만 저장
+        public static void SaveOverlayVisuals(double opacity, double scale)
+        {
+            try
+            {
+                using (var conn = new SQLiteConnection(connString))
+                {
+                    conn.Open();
+                    using (var trans = conn.BeginTransaction())
+                    {
+                        string sql = "INSERT OR REPLACE INTO Settings (Key, Value) VALUES (@key, @value)";
+                        using (var cmd = new SQLiteCommand(sql, conn, trans))
+                        {
+                            cmd.Parameters.AddWithValue("@key", "OverlaySettings_Opacity");
+                            cmd.Parameters.AddWithValue("@value", opacity.ToString());
+                            cmd.ExecuteNonQuery();
+
+                            cmd.Parameters.Clear();
+                            cmd.Parameters.AddWithValue("@key", "OverlaySettings_Scale");
+                            cmd.Parameters.AddWithValue("@value", scale.ToString());
+                            cmd.ExecuteNonQuery();
+                        }
+                        trans.Commit();
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // 투명도와 크기만 로드
+        public static void LoadOverlayVisuals(out double opacity, out double scale)
+        {
+            opacity = 0.8;
+            scale = 1.0;
+
+            try
+            {
+                using (var conn = new SQLiteConnection(connString))
+                {
+                    conn.Open();
+                    string sql = "SELECT Key, Value FROM Settings WHERE Key IN ('OverlaySettings_Opacity', 'OverlaySettings_Scale')";
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string key = reader["Key"].ToString();
+                            string val = reader["Value"].ToString();
+
+                            if (key == "OverlaySettings_Opacity" && double.TryParse(val, out double op)) opacity = op;
+                            if (key == "OverlaySettings_Scale" && double.TryParse(val, out double sc)) scale = sc;
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
     }
 }

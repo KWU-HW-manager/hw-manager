@@ -12,6 +12,13 @@ namespace HWManager.Overlay
     {
         private const int GWL_EXSTYLE = -20;
         private const int WS_EX_TRANSPARENT = 0x00000020;
+        private double _initWidth = 420;
+        private double _initHeight = 50;
+
+        // 프로그램 켜져 있는 동안 위치를 킵해둘 정적 변수
+        private static double _lastX = -1;
+        private static double _lastY = -1;
+
 
         [DllImport("user32.dll")]
         private static extern int GetWindowLong(IntPtr hwnd, int nIndex);
@@ -40,6 +47,24 @@ namespace HWManager.Overlay
         {
             InitializeComponent();
             InitGhostTimer();
+
+            // 이전에 기억된 정상 좌표가 있다면 생성 시점에 강제 배치
+            if (_lastX >= 0 && _lastY >= 0)
+            {
+                this.WindowStartupLocation = WindowStartupLocation.Manual;
+                this.Left = _lastX;
+                this.Top = _lastY;
+            }
+
+            // 창이 최초로 화면에 로드 완료되었을 때 초기 위치 기억
+            this.Loaded += (s, e) =>
+            {
+                if (_lastX < 0 || _lastY < 0)
+                {
+                    _lastX = this.Left;
+                    _lastY = this.Top;
+                }
+            };
         }
 
         // 0.1초마다 글로벌 마우스 및 Shift 상태 감시
@@ -108,6 +133,10 @@ namespace HWManager.Overlay
                 // 배율 오차 없는 정확한 위치로 이동
                 this.Left = _dragStartWindowLogical.X + (deltaX / dpi.DpiScaleX);
                 this.Top = _dragStartWindowLogical.Y + (deltaY / dpi.DpiScaleY);
+
+                // 마우스로 정당하게 움직이고 있을 때만 실시간 좌표 갱신
+                _lastX = this.Left;
+                _lastY = this.Top;
             }
         }
 
@@ -131,6 +160,23 @@ namespace HWManager.Overlay
                 if (progressCpu != null) progressCpu.Value = cpu;
                 if (progressRam != null) progressRam.Value = ram;
                 if (progressGpu != null) progressGpu.Value = gpu;
+            });
+        }
+
+        public void SetScale(double scale)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                // 내부 UI 컨텐츠 스케일 변경
+                if (this.Content is System.Windows.FrameworkTemplate) return;
+                if (this.Content is System.Windows.FrameworkElement element)
+                {
+                    element.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
+                }
+
+                // 정확한 원본 크기에 배율을 곱해서 창 크기를 강제 조정
+                this.Width = _initWidth * scale;
+                this.Height = _initHeight * scale;
             });
         }
     }
