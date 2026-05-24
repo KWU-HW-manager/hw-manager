@@ -23,7 +23,10 @@ namespace HWManager.Client
             btnStatistics = new Button();
             btnExit = new Button();
             btnSettings = new Button();
+            btnWebMonitor = new Button();
+            panelRoot = new Panel();
             tableLayoutPanel1 = new TableLayoutPanel();
+            panelRoot.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
             SuspendLayout();
 
@@ -54,6 +57,21 @@ namespace HWManager.Client
 
             ConfigureCardButton(btnSettings, "설정", 4);
             btnSettings.Click += btnSettings_Click;
+
+            // 웹 모니터링 대시보드로 바로 이동하는 아주 작은 정사각형 버튼.
+            // 메인 카드 레이아웃을 방해하지 않도록 오른쪽 아래 구석에 겹쳐 배치한다.
+            btnWebMonitor.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnWebMonitor.BackColor = Color.White;
+            btnWebMonitor.FlatStyle = FlatStyle.Flat;
+            btnWebMonitor.FlatAppearance.BorderSize = 0;
+            btnWebMonitor.Font = new Font("맑은 고딕", 5F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            btnWebMonitor.Location = new Point(784, 494);
+            btnWebMonitor.Name = "btnWebMonitor";
+            btnWebMonitor.Size = new Size(10, 10);
+            btnWebMonitor.TabIndex = 5;
+            btnWebMonitor.Text = "";
+            btnWebMonitor.UseVisualStyleBackColor = false;
+            btnWebMonitor.Click += btnWebMonitor_Click;
 
             tableLayoutPanel1.Dock = DockStyle.Fill;
             tableLayoutPanel1.BackColor = Color.WhiteSmoke;
@@ -86,17 +104,27 @@ namespace HWManager.Client
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
             tableLayoutPanel1.TabIndex = 0;
 
+            panelRoot.Controls.Add(tableLayoutPanel1);
+            panelRoot.Controls.Add(btnWebMonitor);
+            panelRoot.Dock = DockStyle.Fill;
+            panelRoot.Location = new Point(0, 0);
+            panelRoot.Name = "panelRoot";
+            panelRoot.Size = new Size(800, 510);
+            panelRoot.TabIndex = 0;
+            btnWebMonitor.BringToFront();
+
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
             ClientSize = new Size(800, 510);
             MinimumSize = new Size(460, 420);
-            Controls.Add(tableLayoutPanel1);
+            Controls.Add(panelRoot);
             Font = new Font("맑은 고딕", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 129);
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "HWManager";
             tableLayoutPanel1.ResumeLayout(false);
+            panelRoot.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -122,6 +150,8 @@ namespace HWManager.Client
         private Button btnStatistics;
         private Button btnExit;
         private Button btnSettings;
+        private Button btnWebMonitor;
+        private Panel panelRoot;
         private TableLayoutPanel tableLayoutPanel1;
     }
 }

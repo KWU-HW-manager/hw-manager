@@ -591,7 +591,7 @@ namespace HWManager.Client
             // 
             // FocusModeForm
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(14F, 32F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1400, 900);
             Controls.Add(rootLayout);
