@@ -384,9 +384,7 @@ namespace HWManager.Client
             }
 
             plotUsage.Plot.Axes.Left.Label.Text = "사용량 (%)";
-            plotUsage.Plot.Axes.Left.Label.FontName = "맑은 고딕";
             plotUsage.Plot.Title("저장된 DB 로그 기반 사용량 그래프");
-            plotUsage.Plot.Font.Set("맑은 고딕");
             plotUsage.Plot.Axes.SetLimitsY(0, 100);
             plotUsage.Plot.ShowLegend();
 
@@ -431,9 +429,7 @@ namespace HWManager.Client
             line.LegendText = "알림 횟수";
 
             plotAlert.Plot.Title("알림 발생 추이");
-            plotAlert.Plot.Font.Set("맑은 고딕");
             plotAlert.Plot.Axes.Left.Label.Text = "알림 횟수";
-            plotAlert.Plot.Axes.Left.Label.FontName = "맑은 고딕";
             plotAlert.Plot.ShowLegend();
             plotAlert.Refresh();
         }
