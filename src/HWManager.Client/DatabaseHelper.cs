@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
+using System.Linq;
 using HWManager.Core.Models;
 
 namespace HWManager.Client
@@ -267,6 +269,390 @@ namespace HWManager.Client
             catch { }
 
             return settings;
+        }
+        public static DataTable GetDailyHardwareSummary(DateTime date)
+        {
+            string sql = @"
+                SELECT 'CPU' AS 리소스,
+                       ROUND(AVG(CAST(REPLACE(CPU, '%', '') AS REAL)), 1) AS 평균,
+                       ROUND(MAX(CAST(REPLACE(CPU, '%', '') AS REAL)), 1) AS 최대,
+                       ROUND(MIN(CAST(REPLACE(CPU, '%', '') AS REAL)), 1) AS 최소,
+                       SUM(CASE WHEN CAST(REPLACE(CPU, '%', '') AS REAL) >= 90 THEN 1 ELSE 0 END) AS '90이상횟수'
+                FROM Logs
+                WHERE Category = 'Hardware'
+                  AND date(LogTime) = date(@date)
+
+                UNION ALL
+
+                SELECT 'RAM' AS 리소스,
+                       ROUND(AVG(CAST(REPLACE(RAM, '%', '') AS REAL)), 1) AS 평균,
+                       ROUND(MAX(CAST(REPLACE(RAM, '%', '') AS REAL)), 1) AS 최대,
+                       ROUND(MIN(CAST(REPLACE(RAM, '%', '') AS REAL)), 1) AS 최소,
+                       SUM(CASE WHEN CAST(REPLACE(RAM, '%', '') AS REAL) >= 90 THEN 1 ELSE 0 END) AS '90이상횟수'
+                FROM Logs
+                WHERE Category = 'Hardware'
+                  AND date(LogTime) = date(@date)
+
+                UNION ALL
+
+                SELECT 'GPU' AS 리소스,
+                       ROUND(AVG(CAST(REPLACE(GPU, '%', '') AS REAL)), 1) AS 평균,
+                       ROUND(MAX(CAST(REPLACE(GPU, '%', '') AS REAL)), 1) AS 최대,
+                       ROUND(MIN(CAST(REPLACE(GPU, '%', '') AS REAL)), 1) AS 최소,
+                       SUM(CASE WHEN CAST(REPLACE(GPU, '%', '') AS REAL) >= 90 THEN 1 ELSE 0 END) AS '90이상횟수'
+                FROM Logs
+                WHERE Category = 'Hardware'
+                  AND date(LogTime) = date(@date)";
+
+            return ExecuteDataTable(sql, new SQLiteParameter("@date", date.ToString("yyyy-MM-dd")));
+        }
+
+        public static DataTable GetDailyHourlyAverage(DateTime date)
+        {
+            string sql = @"
+                SELECT strftime('%H시', LogTime) AS 시간대,
+                       ROUND(AVG(CAST(REPLACE(CPU, '%', '') AS REAL)), 1) AS CPU평균,
+                       ROUND(AVG(CAST(REPLACE(RAM, '%', '') AS REAL)), 1) AS RAM평균,
+                       ROUND(AVG(CAST(REPLACE(GPU, '%', '') AS REAL)), 1) AS GPU평균
+                FROM Logs
+                WHERE Category = 'Hardware'
+                  AND date(LogTime) = date(@date)
+                GROUP BY strftime('%H', LogTime)
+                ORDER BY strftime('%H', LogTime)";
+
+            return ExecuteDataTable(sql, new SQLiteParameter("@date", date.ToString("yyyy-MM-dd")));
+        }
+
+        public static DataTable GetWeeklyHardwareSummary(DateTime start, DateTime end)
+        {
+            string sql = @"
+                SELECT 
+                    CASE strftime('%w', LogTime)
+                        WHEN '0' THEN '일요일'
+                        WHEN '1' THEN '월요일'
+                        WHEN '2' THEN '화요일'
+                        WHEN '3' THEN '수요일'
+                        WHEN '4' THEN '목요일'
+                        WHEN '5' THEN '금요일'
+                        WHEN '6' THEN '토요일'
+                    END AS 요일,
+                    ROUND(AVG(CAST(REPLACE(CPU, '%', '') AS REAL)), 1) AS CPU평균,
+                    ROUND(MAX(CAST(REPLACE(CPU, '%', '') AS REAL)), 1) AS CPU최대,
+                    ROUND(AVG(CAST(REPLACE(RAM, '%', '') AS REAL)), 1) AS RAM평균,
+                    ROUND(MAX(CAST(REPLACE(RAM, '%', '') AS REAL)), 1) AS RAM최대,
+                    ROUND(AVG(CAST(REPLACE(GPU, '%', '') AS REAL)), 1) AS GPU평균,
+                    ROUND(MAX(CAST(REPLACE(GPU, '%', '') AS REAL)), 1) AS GPU최대,
+                    (
+                        SELECT COUNT(*)
+                        FROM Logs A
+                        WHERE A.Category = 'Alert'
+                          AND date(A.LogTime) = date(Logs.LogTime)
+                    ) AS 알림발생횟수
+                FROM Logs
+                WHERE Category = 'Hardware'
+                  AND date(LogTime) BETWEEN date(@start) AND date(@end)
+                GROUP BY strftime('%w', LogTime)
+                ORDER BY strftime('%w', LogTime)";
+
+            return ExecuteDataTable(
+                sql,
+                new SQLiteParameter("@start", start.ToString("yyyy-MM-dd")),
+                new SQLiteParameter("@end", end.ToString("yyyy-MM-dd"))
+            );
+        }
+
+        public static string GetHighestUsageDate(DateTime start, DateTime end)
+        {
+            string sql = @"
+                SELECT date(LogTime) AS 날짜,
+                       ROUND(AVG(
+                            (
+                                CAST(REPLACE(CPU, '%', '') AS REAL) +
+                                CAST(REPLACE(RAM, '%', '') AS REAL) +
+                                CAST(REPLACE(GPU, '%', '') AS REAL)
+                            ) / 3.0
+                       ), 1) AS 평균사용량
+                FROM Logs
+                WHERE Category = 'Hardware'
+                  AND date(LogTime) BETWEEN date(@start) AND date(@end)
+                GROUP BY date(LogTime)
+                ORDER BY 평균사용량 DESC
+                LIMIT 1";
+
+            DataTable dt = ExecuteDataTable(
+                sql,
+                new SQLiteParameter("@start", start.ToString("yyyy-MM-dd")),
+                new SQLiteParameter("@end", end.ToString("yyyy-MM-dd"))
+            );
+
+            if (dt.Rows.Count == 0)
+            {
+                return "데이터 없음";
+            }
+
+            return $"{dt.Rows[0]["날짜"]} / 평균 {dt.Rows[0]["평균사용량"]}%";
+        }
+
+        public static DataTable GetUsageGraphData(DateTime start, DateTime end)
+        {
+            string sql = @"
+                SELECT strftime('%m-%d %H:%M', LogTime) AS 시간,
+                       ROUND(CAST(REPLACE(CPU, '%', '') AS REAL), 1) AS CPU,
+                       ROUND(CAST(REPLACE(RAM, '%', '') AS REAL), 1) AS RAM,
+                       ROUND(CAST(REPLACE(GPU, '%', '') AS REAL), 1) AS GPU
+                FROM Logs
+                WHERE Category = 'Hardware'
+                  AND date(LogTime) BETWEEN date(@start) AND date(@end)
+                ORDER BY LogTime";
+
+            return ExecuteDataTable(
+                sql,
+                new SQLiteParameter("@start", start.ToString("yyyy-MM-dd")),
+                new SQLiteParameter("@end", end.ToString("yyyy-MM-dd"))
+            );
+        }
+
+        public static DataTable GetAlertList(DateTime start, DateTime end)
+        {
+            string sql = @"
+                SELECT strftime('%Y-%m-%d %H:%M:%S', LogTime) AS 시간,
+                       CPU AS 리소스,
+                       ProcessInfo AS 상세내용
+                FROM Logs
+                WHERE Category = 'Alert'
+                  AND date(LogTime) BETWEEN date(@start) AND date(@end)
+                ORDER BY LogTime DESC";
+
+            return ExecuteDataTable(
+                sql,
+                new SQLiteParameter("@start", start.ToString("yyyy-MM-dd")),
+                new SQLiteParameter("@end", end.ToString("yyyy-MM-dd"))
+            );
+        }
+
+        public static DataTable GetAlertHourlyStats(DateTime start, DateTime end)
+        {
+            string sql = @"
+                SELECT strftime('%H시', LogTime) AS 시간대,
+                       COUNT(*) AS 알림횟수
+                FROM Logs
+                WHERE Category = 'Alert'
+                  AND date(LogTime) BETWEEN date(@start) AND date(@end)
+                GROUP BY strftime('%H', LogTime)
+                ORDER BY strftime('%H', LogTime)";
+
+            return ExecuteDataTable(
+                sql,
+                new SQLiteParameter("@start", start.ToString("yyyy-MM-dd")),
+                new SQLiteParameter("@end", end.ToString("yyyy-MM-dd"))
+            );
+        }
+
+        public static DataTable GetAlertResourceStats(DateTime start, DateTime end)
+        {
+            string sql = @"
+                SELECT 
+                    CASE 
+                        WHEN CPU LIKE 'CPU%' THEN 'CPU'
+                        WHEN CPU LIKE 'RAM%' THEN 'RAM'
+                        WHEN CPU LIKE 'GPU%' THEN 'GPU'
+                        ELSE '기타'
+                    END AS 리소스,
+                    COUNT(*) AS 알림횟수
+                FROM Logs
+                WHERE Category = 'Alert'
+                  AND date(LogTime) BETWEEN date(@start) AND date(@end)
+                GROUP BY 리소스
+                ORDER BY 알림횟수 DESC";
+
+            return ExecuteDataTable(
+                sql,
+                new SQLiteParameter("@start", start.ToString("yyyy-MM-dd")),
+                new SQLiteParameter("@end", end.ToString("yyyy-MM-dd"))
+            );
+        }
+
+        public static DataTable GetAlertTrendStats(DateTime start, DateTime end)
+        {
+            string sql = @"
+                SELECT date(LogTime) AS 날짜,
+                       COUNT(*) AS 알림횟수
+                FROM Logs
+                WHERE Category = 'Alert'
+                  AND date(LogTime) BETWEEN date(@start) AND date(@end)
+                GROUP BY date(LogTime)
+                ORDER BY date(LogTime)";
+
+            return ExecuteDataTable(
+                sql,
+                new SQLiteParameter("@start", start.ToString("yyyy-MM-dd")),
+                new SQLiteParameter("@end", end.ToString("yyyy-MM-dd"))
+            );
+        }
+
+        public static DataTable GetFrequentProcessStats(DateTime start, DateTime end, string keyword)
+        {
+            List<ProcessLogItem> items = GetProcessLogItems(start, end);
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                items = items
+                    .Where(x => x.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            DataTable dt = new DataTable();
+            dt.Columns.Add("프로세스명");
+            dt.Columns.Add("등장횟수", typeof(int));
+
+            var result = items
+                .GroupBy(x => x.Name)
+                .Select(g => new
+                {
+                    Name = g.Key,
+                    Count = g.Count()
+                })
+                .OrderByDescending(x => x.Count)
+                .Take(30);
+
+            foreach (var item in result)
+            {
+                dt.Rows.Add(item.Name, item.Count);
+            }
+
+            return dt;
+        }
+
+        public static DataTable GetTopMemoryProcessStats(DateTime start, DateTime end, string keyword)
+        {
+            List<ProcessLogItem> items = GetProcessLogItems(start, end);
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                items = items
+                    .Where(x => x.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            DataTable dt = new DataTable();
+            dt.Columns.Add("프로세스명");
+            dt.Columns.Add("평균메모리MB", typeof(double));
+            dt.Columns.Add("최대메모리MB", typeof(int));
+            dt.Columns.Add("등장횟수", typeof(int));
+
+            var result = items
+                .GroupBy(x => x.Name)
+                .Select(g => new
+                {
+                    Name = g.Key,
+                    AvgMemory = Math.Round(g.Average(x => x.MemoryMb), 1),
+                    MaxMemory = g.Max(x => x.MemoryMb),
+                    Count = g.Count()
+                })
+                .OrderByDescending(x => x.MaxMemory)
+                .Take(30);
+
+            foreach (var item in result)
+            {
+                dt.Rows.Add(item.Name, item.AvgMemory, item.MaxMemory, item.Count);
+            }
+
+            return dt;
+        }
+
+        private static List<ProcessLogItem> GetProcessLogItems(DateTime start, DateTime end)
+        {
+            List<ProcessLogItem> list = new List<ProcessLogItem>();
+
+            string sql = @"
+                SELECT P1, P2, P3, P4, P5, P6, P7, P8, P9, P10
+                FROM Logs
+                WHERE Category = 'TopProcess'
+                  AND date(LogTime) BETWEEN date(@start) AND date(@end)
+                ORDER BY LogTime DESC";
+
+            DataTable dt = ExecuteDataTable(
+                sql,
+                new SQLiteParameter("@start", start.ToString("yyyy-MM-dd")),
+                new SQLiteParameter("@end", end.ToString("yyyy-MM-dd"))
+            );
+
+            foreach (DataRow row in dt.Rows)
+            {
+                for (int i = 1; i <= 10; i++)
+                {
+                    string value = row[$"P{i}"]?.ToString() ?? "";
+                    ProcessLogItem parsed = ParseProcessLogValue(value);
+
+                    if (parsed != null)
+                    {
+                        list.Add(parsed);
+                    }
+                }
+            }
+
+            return list;
+        }
+
+        private static ProcessLogItem ParseProcessLogValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            int left = value.LastIndexOf('(');
+            int right = value.LastIndexOf("MB)");
+
+            if (left <= 0 || right <= left)
+            {
+                return null;
+            }
+
+            string name = value.Substring(0, left);
+            string memoryText = value.Substring(left + 1, right - left - 1);
+
+            if (!int.TryParse(memoryText, out int memoryMb))
+            {
+                return null;
+            }
+
+            return new ProcessLogItem
+            {
+                Name = name,
+                MemoryMb = memoryMb
+            };
+        }
+
+        private static DataTable ExecuteDataTable(string sql, params SQLiteParameter[] parameters)
+        {
+            DataTable dt = new DataTable();
+
+            using (var conn = new SQLiteConnection(connString))
+            {
+                conn.Open();
+
+                using (var cmd = new SQLiteCommand(sql, conn))
+                {
+                    if (parameters != null && parameters.Length > 0)
+                    {
+                        cmd.Parameters.AddRange(parameters);
+                    }
+
+                    using (var adapter = new SQLiteDataAdapter(cmd))
+                    {
+                        adapter.Fill(dt);
+                    }
+                }
+            }
+
+            return dt;
+        }
+
+        private class ProcessLogItem
+        {
+            public string Name { get; set; } = "";
+            public int MemoryMb { get; set; }
         }
     }
 }

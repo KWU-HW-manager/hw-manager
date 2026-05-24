@@ -20,6 +20,7 @@ namespace HWManager.Client
             btnMonitor = new Button();
             btnProcess = new Button();
             btnFocusMode = new Button();
+            btnStatistics = new Button();
             btnExit = new Button();
             btnSettings = new Button();
             tableLayoutPanel1 = new TableLayoutPanel();
@@ -36,6 +37,9 @@ namespace HWManager.Client
 
             ConfigureCardButton(btnFocusMode, "커스텀 자원 관리", 2);
             btnFocusMode.Click += btnFocusMode_Click;
+
+            ConfigureCardButton(btnStatistics, "통계 및 분석", 3);
+            btnStatistics.Click += btnStatistics_Click;
 
             // 하단 버튼들 (종료, 설정)
             btnExit.Dock = DockStyle.Fill;
@@ -66,16 +70,20 @@ namespace HWManager.Client
             tableLayoutPanel1.Controls.Add(btnFocusMode, 0, 2);
             tableLayoutPanel1.SetColumnSpan(btnFocusMode, 2);
 
+            tableLayoutPanel1.Controls.Add(btnStatistics, 0, 3);
+            tableLayoutPanel1.SetColumnSpan(btnStatistics, 2);
+
             //tableLayoutPanel1.Controls.Add(btnExit, 0, 3);
             //tableLayoutPanel1.Controls.Add(btnSettings, 1, 3);
-            tableLayoutPanel1.Controls.Add(btnExit, 1, 3);
-            tableLayoutPanel1.Controls.Add(btnSettings, 0, 3);
+            tableLayoutPanel1.Controls.Add(btnExit, 1, 4);
+            tableLayoutPanel1.Controls.Add(btnSettings, 0, 4);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
-            tableLayoutPanel1.RowCount = 4;
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+            tableLayoutPanel1.RowCount = 5;
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
             tableLayoutPanel1.TabIndex = 0;
 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -111,6 +119,7 @@ namespace HWManager.Client
         private Button btnMonitor;
         private Button btnProcess;
         private Button btnFocusMode;
+        private Button btnStatistics;
         private Button btnExit;
         private Button btnSettings;
         private TableLayoutPanel tableLayoutPanel1;
