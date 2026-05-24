@@ -23,6 +23,14 @@ namespace HWManager.Core.Services
         // 자동 제어 기능 ON/OFF
         public bool Enabled { get; set; } = false;
 
+        // 자동 종료 쿨다운.
+        // 조건이 계속 유지되는 상황(CPU/RAM/GPU 임계값 초과 등)에서 매초 종료 시도가 반복되는 것을 막는다.
+        public TimeSpan Cooldown { get; set; } = TimeSpan.FromSeconds(30);
+
+        // 마지막으로 자동 종료를 시도한 시각.
+        // 실제 종료 성공 여부와 관계없이 "종료 시도" 자체를 기준으로 쿨다운을 적용한다.
+        private DateTime? _lastKillAttemptAt;
+
         // 이벤트: UI에 활동 로그를 실시간 전달 ("[13:02:11] Discord 자동 종료" 형식)
         public event Action<string>? LogGenerated;
 
@@ -38,7 +46,20 @@ namespace HWManager.Core.Services
             string? reason = CheckTrigger(snapshot);
             if (reason == null) return;
 
+            if (IsCooldownActive())
+                return;
+
+            _lastKillAttemptAt = DateTime.Now;
             KillTargets(reason);
+        }
+
+        // 마지막 종료 시도 후 Cooldown 시간이 지나지 않았으면 true.
+        private bool IsCooldownActive()
+        {
+            if (_lastKillAttemptAt == null)
+                return false;
+
+            return DateTime.Now - _lastKillAttemptAt.Value < Cooldown;
         }
 
         // 조건을 만족하는 첫 번째 사유를 반환, 없으면 null
