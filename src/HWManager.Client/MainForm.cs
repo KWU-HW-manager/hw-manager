@@ -29,15 +29,31 @@ namespace HWManager.Client
             InitOverlayTimer();
         }
 
+        // DB 설정에 따라 오버레이 스위치 토글
+        public void ApplyOverlaySettings()
+        {
+            bool isEnabled = DatabaseHelper.LoadOverlaySettings();
+            if (isEnabled)
+            {
+                _overlayTimer?.Start();
+                _overlayService?.ShowOverlay();
+            }
+            else
+            {
+                _overlayTimer?.Stop();
+                _overlayService?.HideOverlay();
+            }
+        }
+
         // 백그라운드 타이머 초기화
         private void InitOverlayTimer()
         {
             _overlayTimer = new System.Timers.Timer();
-            _overlayTimer.Interval = 1000; // 1초 주기
-            _overlayTimer.Elapsed += OverlayTimer_Elapsed; // Elapsed 이벤트 사용
-            _overlayTimer.Start();
+            _overlayTimer.Interval = 1000;
+            _overlayTimer.Elapsed += OverlayTimer_Elapsed;
 
-            _overlayService.ShowOverlay();
+            // 변경: 무조건 켜지 않고 DB 설정을 검사하여 구동
+            ApplyOverlaySettings();
         }
 
         private void OverlayTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)

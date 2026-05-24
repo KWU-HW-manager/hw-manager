@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="HWManager Overlay" Height="50" Width="420"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        Topmost="True" ShowInTaskbar="False">
-
+        Topmost="True" ShowInTaskbar="False"
+        MouseDown="Window_MouseDown" MouseMove="Window_MouseMove" MouseUp="Window_MouseUp">
     <Border Background="#E61A1A1A" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="6" Padding="15,0">
         <Grid>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">

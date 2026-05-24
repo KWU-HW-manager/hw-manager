@@ -51,7 +51,7 @@ namespace HWManager.Client
             {
                 // 데이터베이스에서 설정값 로드
                 _alertSettings = DatabaseHelper.LoadAlertSettings();
-                _overlayEnabled = false; // TODO: 오버레이 설정도 DB에서 로드
+                _overlayEnabled = DatabaseHelper.LoadOverlaySettings();
 
                 // UI에 값 반영
                 nudAlertCpu.Value = (decimal)_alertSettings.CpuThreshold;
@@ -89,6 +89,7 @@ namespace HWManager.Client
                 if (_mainForm != null)
                 {
                     _mainForm.RefreshAlertSettings();
+                    _mainForm.ApplyOverlaySettings();
                 }
 
                 MessageBox.Show("설정이 저장되었습니다.", "저장 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -133,6 +134,7 @@ namespace HWManager.Client
         private void SaveSettings()
         {
             DatabaseHelper.SaveAlertSettings(_alertSettings);
+            DatabaseHelper.SaveOverlaySettings(_overlayEnabled);
         }
 
         /// <summary>

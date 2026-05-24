@@ -92,7 +92,7 @@ namespace HWManager.Client
             grpAlert.Margin = new Padding(0, 0, 0, 15);
             grpAlert.Name = "grpAlert";
             grpAlert.Padding = new Padding(10);
-            grpAlert.Size = new Size(670, 230);
+            grpAlert.Size = new Size(670, 226);
             grpAlert.TabIndex = 0;
             grpAlert.TabStop = false;
             grpAlert.Text = "알림 설정";
@@ -120,7 +120,7 @@ namespace HWManager.Client
             tableLayoutAlert.Controls.Add(nudAlertInterval, 1, 4);
             tableLayoutAlert.Controls.Add(lblAlertIntervalUnit, 2, 4);
             tableLayoutAlert.Dock = DockStyle.Fill;
-            tableLayoutAlert.Location = new Point(10, 30);
+            tableLayoutAlert.Location = new Point(10, 26);
             tableLayoutAlert.Margin = new Padding(0);
             tableLayoutAlert.Name = "tableLayoutAlert";
             tableLayoutAlert.RowCount = 5;
@@ -167,7 +167,7 @@ namespace HWManager.Client
             nudAlertCpu.Location = new Point(123, 33);
             nudAlertCpu.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             nudAlertCpu.Name = "nudAlertCpu";
-            nudAlertCpu.Size = new Size(74, 27);
+            nudAlertCpu.Size = new Size(74, 23);
             nudAlertCpu.TabIndex = 1;
             nudAlertCpu.TextAlign = HorizontalAlignment.Right;
             nudAlertCpu.Value = new decimal(new int[] { 90, 0, 0, 0 });
@@ -204,7 +204,7 @@ namespace HWManager.Client
             nudAlertRam.Location = new Point(123, 73);
             nudAlertRam.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             nudAlertRam.Name = "nudAlertRam";
-            nudAlertRam.Size = new Size(74, 27);
+            nudAlertRam.Size = new Size(74, 23);
             nudAlertRam.TabIndex = 2;
             nudAlertRam.TextAlign = HorizontalAlignment.Right;
             nudAlertRam.Value = new decimal(new int[] { 90, 0, 0, 0 });
@@ -241,7 +241,7 @@ namespace HWManager.Client
             nudAlertGpu.Location = new Point(123, 113);
             nudAlertGpu.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             nudAlertGpu.Name = "nudAlertGpu";
-            nudAlertGpu.Size = new Size(74, 27);
+            nudAlertGpu.Size = new Size(74, 23);
             nudAlertGpu.TabIndex = 3;
             nudAlertGpu.TextAlign = HorizontalAlignment.Right;
             nudAlertGpu.Value = new decimal(new int[] { 90, 0, 0, 0 });
@@ -279,7 +279,7 @@ namespace HWManager.Client
             nudAlertInterval.Maximum = new decimal(new int[] { 999999, 0, 0, 0 });
             nudAlertInterval.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             nudAlertInterval.Name = "nudAlertInterval";
-            nudAlertInterval.Size = new Size(74, 27);
+            nudAlertInterval.Size = new Size(74, 23);
             nudAlertInterval.TabIndex = 4;
             nudAlertInterval.TextAlign = HorizontalAlignment.Right;
             nudAlertInterval.Value = new decimal(new int[] { 60, 0, 0, 0 });
@@ -303,11 +303,11 @@ namespace HWManager.Client
             grpOverlay.Controls.Add(chkEnableOverlay);
             grpOverlay.Dock = DockStyle.Top;
             grpOverlay.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
-            grpOverlay.Location = new Point(0, 245);
+            grpOverlay.Location = new Point(0, 241);
             grpOverlay.Margin = new Padding(0, 0, 0, 15);
             grpOverlay.Name = "grpOverlay";
             grpOverlay.Padding = new Padding(10);
-            grpOverlay.Size = new Size(670, 64);
+            grpOverlay.Size = new Size(670, 55);
             grpOverlay.TabIndex = 1;
             grpOverlay.TabStop = false;
             grpOverlay.Text = "오버레이";
@@ -317,9 +317,9 @@ namespace HWManager.Client
             chkEnableOverlay.AutoSize = true;
             chkEnableOverlay.Dock = DockStyle.Fill;
             chkEnableOverlay.Font = new Font("맑은 고딕", 9F);
-            chkEnableOverlay.Location = new Point(10, 30);
+            chkEnableOverlay.Location = new Point(10, 26);
             chkEnableOverlay.Name = "chkEnableOverlay";
-            chkEnableOverlay.Size = new Size(650, 24);
+            chkEnableOverlay.Size = new Size(650, 19);
             chkEnableOverlay.TabIndex = 5;
             chkEnableOverlay.Text = "오버레이 기능 활성화";
             chkEnableOverlay.UseVisualStyleBackColor = true;
@@ -372,7 +372,7 @@ namespace HWManager.Client
             // 
             // ConfigForm
             // 
-            AutoScaleDimensions = new SizeF(9F, 20F);
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
             ClientSize = new Size(700, 560);

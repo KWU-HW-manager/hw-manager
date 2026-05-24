@@ -268,5 +268,49 @@ namespace HWManager.Client
 
             return settings;
         }
+
+        // 오버레이 설정값 저장
+        public static void SaveOverlaySettings(bool enabled)
+        {
+            try
+            {
+                using (var conn = new SQLiteConnection(connString))
+                {
+                    conn.Open();
+                    // 기존 값이 있으면 덮어쓰고 없으면 삽입
+                    string sql = "INSERT OR REPLACE INTO Settings (Key, Value) VALUES ('OverlaySettings_IsEnabled', @value)";
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@value", enabled.ToString());
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // 저장된 오버레이 설정값 로드
+        public static bool LoadOverlaySettings()
+        {
+            try
+            {
+                using (var conn = new SQLiteConnection(connString))
+                {
+                    conn.Open();
+                    string sql = "SELECT Value FROM Settings WHERE Key = 'OverlaySettings_IsEnabled'";
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    {
+                        var result = cmd.ExecuteScalar();
+                        if (result != null && bool.TryParse(result.ToString(), out bool isEnabled))
+                        {
+                            return isEnabled;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return false; // 데이터가 없거나 에러 시 기본값은 꺼짐
+        }
     }
 }
