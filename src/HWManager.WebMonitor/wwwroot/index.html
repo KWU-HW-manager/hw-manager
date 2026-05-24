@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HW Manager 웹 모니터링</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f8fafc;
+      --card: #fff;
+      --text: #111827;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --soft: #f1f5f9;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --blue: #2563eb;
+      --dark: #111827;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "맑은 고딕", sans-serif;
+    }
+
+    .page {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    h1 { margin: 0; font-size: 26px; letter-spacing: -0.04em; }
+    .subtitle { margin-top: 6px; color: var(--muted); font-size: 13px; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--yellow);
+      box-shadow: 0 0 0 3px #fef9c3;
+    }
+    .status-dot.ok { background: #16a34a; box-shadow: 0 0 0 3px #dcfce7; }
+    .status-dot.err { background: var(--red); box-shadow: 0 0 0 3px #fee2e2; }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+
+    .summary-card { padding: 18px 20px; }
+    .summary-card.dark { background: var(--dark); border-color: var(--dark); }
+    .label { color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+    .value { font-size: 28px; line-height: 1; font-weight: 800; letter-spacing: -0.05em; }
+    .sub { color: #94a3b8; font-size: 12px; margin-top: 7px; }
+    .dark .label { color: #9ca3af; }
+    .dark .value { color: #fff; }
+    .dark .sub { color: #6b7280; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 14px;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--soft);
+    }
+    .card-title { font-size: 15px; font-weight: 800; }
+    .card-meta { color: #94a3b8; font-size: 12px; }
+    .card-body { padding: 18px 20px 20px; }
+
+    .metric-row { margin-bottom: 18px; }
+    .metric-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .metric-top strong { color: var(--text); font-size: 14px; }
+    .bar {
+      height: 8px;
+      background: var(--soft);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar > div {
+      height: 100%;
+      width: 0%;
+      background: var(--green);
+      border-radius: 999px;
+      transition: width 0.7s ease, background 0.7s ease;
+    }
+
+    canvas {
+      width: 100%;
+      height: 260px;
+      display: block;
+      background: #fff;
+      border: 1px solid var(--soft);
+      border-radius: 10px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .legend span::before {
+      content: "";
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-right: 6px;
+      background: var(--c);
+    }
+
+    .process-list { display: grid; gap: 8px; }
+    .process-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid var(--soft);
+      border-radius: 9px;
+    }
+    .process-name { min-width: 0; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .process-pid { color: #94a3b8; font-size: 11px; margin-top: 2px; }
+    .process-mem { color: var(--text); font-size: 12px; font-weight: 700; }
+
+    .error {
+      display: none;
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      background: #fef2f2;
+      color: #dc2626;
+      font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+      header { align-items: flex-start; flex-direction: column; }
+      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .page { width: min(100vw - 20px, 1180px); padding-top: 18px; }
+      .summary { grid-template-columns: 1fr; }
+      h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <h1>HW Manager 웹 모니터링</h1>
+        <div class="subtitle" id="machine">하드웨어 정보를 불러오는 중...</div>
+      </div>
+      <div class="status-pill"><span class="status-dot" id="statusDot"></span><span id="statusText">연결 중</span></div>
+    </header>
+
+    <div class="error" id="errorBox"></div>
+
+    <section class="summary">
+      <div class="card summary-card dark">
+        <div class="label">CPU</div>
+        <div class="value" id="cpuValue">--%</div>
+        <div class="sub">실시간 사용률</div>
+      </div>
+      <div class="card summary-card">
+        <div class="label">RAM</div>
+        <div class="value" id="ramValue">--%</div>
+        <div class="sub">메모리 사용률</div>
+      </div>
+      <div class="card summary-card">
+        <div class="label">GPU</div>
+        <div class="value" id="gpuValue">--%</div>
+        <div class="sub">그래픽 사용률</div>
+      </div>
+      <div class="card summary-card">
+        <div class="label">프로세스</div>
+        <div class="value" id="processValue">--</div>
+        <div class="sub" id="uptimeValue">업타임 --</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">시스템 사용량</div>
+          <div class="card-meta" id="updatedAt">--</div>
+        </div>
+        <div class="card-body">
+          <div class="metric-row">
+            <div class="metric-top"><span>CPU</span><strong id="cpuMetric">--%</strong></div>
+            <div class="bar"><div id="cpuBar"></div></div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-top"><span>RAM</span><strong id="ramMetric">--%</strong></div>
+            <div class="bar"><div id="ramBar"></div></div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-top"><span>GPU</span><strong id="gpuMetric">--%</strong></div>
+            <div class="bar"><div id="gpuBar"></div></div>
+          </div>
+
+          <canvas id="chart" width="900" height="260" aria-label="CPU RAM GPU history chart"></canvas>
+          <div class="legend">
+            <span style="--c:#2563eb">CPU</span>
+            <span style="--c:#22c55e">RAM</span>
+            <span style="--c:#a855f7">GPU</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">메모리 상위 프로세스</div>
+          <div class="card-meta">Top 10</div>
+        </div>
+        <div class="card-body">
+          <div class="process-list" id="processList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      statusDot: $('statusDot'), statusText: $('statusText'), errorBox: $('errorBox'),
+      machine: $('machine'), updatedAt: $('updatedAt'), uptimeValue: $('uptimeValue'),
+      cpuValue: $('cpuValue'), ramValue: $('ramValue'), gpuValue: $('gpuValue'), processValue: $('processValue'),
+      cpuMetric: $('cpuMetric'), ramMetric: $('ramMetric'), gpuMetric: $('gpuMetric'),
+      cpuBar: $('cpuBar'), ramBar: $('ramBar'), gpuBar: $('gpuBar'), processList: $('processList'),
+      chart: $('chart')
+    };
+
+    let history = [];
+
+    function pct(value) {
+      const n = Number(value || 0);
+      return `${n.toFixed(1)}%`;
+    }
+
+    function fmtMb(value) {
+      const mb = Number(value || 0);
+      return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb.toFixed(1)} MB`;
+    }
+
+    function fmtUptime(seconds) {
+      seconds = Number(seconds || 0);
+      const d = Math.floor(seconds / 86400);
+      const h = Math.floor((seconds % 86400) / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      return d > 0 ? `업타임 ${d}일 ${h}h` : `업타임 ${h}h ${m}m`;
+    }
+
+    function setOnline(ok, message) {
+      els.statusDot.className = `status-dot ${ok ? 'ok' : 'err'}`;
+      els.statusText.textContent = message;
+      els.errorBox.style.display = ok ? 'none' : 'block';
+      if (!ok) els.errorBox.textContent = message;
+    }
+
+    function colorFor(value) {
+      value = Number(value || 0);
+      if (value >= 90) return '#ef4444';
+      if (value >= 70) return '#f59e0b';
+      return '#22c55e';
+    }
+
+    function updateBar(el, value) {
+      const safe = Math.max(0, Math.min(Number(value || 0), 100));
+      el.style.width = `${safe}%`;
+      el.style.background = colorFor(safe);
+    }
+
+    function updateMetrics(data) {
+      const latest = data.latest || {};
+      els.machine.textContent = `${data.machineName || 'Unknown'} · ${data.os || ''}`;
+      els.cpuValue.textContent = pct(latest.cpuUsage);
+      els.ramValue.textContent = pct(latest.ramUsage);
+      els.gpuValue.textContent = pct(latest.gpuUsage);
+      els.processValue.textContent = data.processCount ?? '--';
+      els.uptimeValue.textContent = fmtUptime(data.uptimeSeconds);
+      els.cpuMetric.textContent = pct(latest.cpuUsage);
+      els.ramMetric.textContent = pct(latest.ramUsage);
+      els.gpuMetric.textContent = pct(latest.gpuUsage);
+      els.updatedAt.textContent = latest.measuredAt ? new Date(latest.measuredAt).toLocaleTimeString('ko-KR') : '--';
+
+      updateBar(els.cpuBar, latest.cpuUsage);
+      updateBar(els.ramBar, latest.ramUsage);
+      updateBar(els.gpuBar, latest.gpuUsage);
+
+      els.processList.innerHTML = (data.topProcesses || []).map(p => `
+        <div class="process-row">
+          <div>
+            <div class="process-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
+            <div class="process-pid">PID ${p.id}</div>
+          </div>
+          <div class="process-mem">${fmtMb(p.memoryUsageMB)}</div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[ch]));
+    }
+
+    function drawChart() {
+      const canvas = els.chart;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      const pad = { left: 36, right: 14, top: 16, bottom: 24 };
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = '#f1f5f9';
+      ctx.lineWidth = 1;
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px Segoe UI, sans-serif';
+      for (let y = 0; y <= 100; y += 25) {
+        const py = pad.top + plotH - (y / 100) * plotH;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, py);
+        ctx.lineTo(width - pad.right, py);
+        ctx.stroke();
+        ctx.fillText(`${y}%`, 5, py + 4);
+      }
+
+      if (history.length < 2) return;
+
+      const series = [
+        ['cpuUsage', '#2563eb'],
+        ['ramUsage', '#22c55e'],
+        ['gpuUsage', '#a855f7']
+      ];
+
+      for (const [key, color] of series) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        history.forEach((point, i) => {
+          const x = pad.left + (i / Math.max(history.length - 1, 1)) * plotW;
+          const y = pad.top + plotH - (Math.max(0, Math.min(Number(point[key] || 0), 100)) / 100) * plotH;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      }
+    }
+
+    async function loadMetrics() {
+      const res = await fetch('/api/metrics', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`API 오류: HTTP ${res.status}`);
+      const data = await res.json();
+      updateMetrics(data);
+      setOnline(true, '온라인');
+    }
+
+    async function loadHistory() {
+      const res = await fetch('/api/history', { cache: 'no-store' });
+      if (!res.ok) return;
+      history = await res.json();
+      drawChart();
+    }
+
+    async function refresh() {
+      try {
+        await Promise.all([loadMetrics(), loadHistory()]);
+      } catch (e) {
+        setOnline(false, e.message || '연결 실패');
+      }
+    }
+
+    refresh();
+    setInterval(refresh, 2000);
+  </script>
+</body>
+</html>
