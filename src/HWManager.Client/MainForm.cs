@@ -16,6 +16,9 @@ namespace HWManager.Client
         private AlertService _alertService;
         private System.Windows.Forms.Timer? dbLogTimer;
         private Dictionary<string, DateTime> _lastAlertTime = new Dictionary<string, DateTime>();
+        // 오버레이 서비스 및 타이머 변수 추가
+        private readonly IOverlayService _overlayService = new OverlayService();
+        private System.Timers.Timer? _overlayTimer;
 
         public MainForm()
         {
@@ -23,6 +26,38 @@ namespace HWManager.Client
             ApplyModernStyle();
             InitAlertService();
             InitDbLogTimer();
+            InitOverlayTimer();
+        }
+
+        // 백그라운드 타이머 초기화
+        private void InitOverlayTimer()
+        {
+            _overlayTimer = new System.Timers.Timer();
+            _overlayTimer.Interval = 1000; // 1초 주기
+            _overlayTimer.Elapsed += OverlayTimer_Elapsed; // Elapsed 이벤트 사용
+            _overlayTimer.Start();
+
+            _overlayService.ShowOverlay();
+        }
+
+        private void OverlayTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            try
+            {
+                SystemSnapshot snapshot = _monitorService.GetCurrentStatus();
+
+                if (snapshot != null)
+                {
+                    // 디버그 창에 실제 수집된 숫자가 찍히는지 확인
+                    System.Diagnostics.Trace.WriteLine($"[데이터 확인] CPU: {snapshot.CpuUsage}%, RAM: {snapshot.RamUsage}%, GPU: {snapshot.GpuUsage}%");
+
+                    _overlayService.UpdateHardwareData(snapshot);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"오버레이 오류: {ex.Message}");
+            }
         }
 
         private void InitAlertService()
@@ -161,6 +196,9 @@ namespace HWManager.Client
             dbLogTimer?.Stop();
             _monitorService?.Dispose();
             base.OnFormClosing(e);
+            // 오버레이 리소스 해제 추가
+            _overlayTimer?.Stop();
+            _overlayService?.HideOverlay();
         }
     }
 }
