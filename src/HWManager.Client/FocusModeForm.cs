@@ -1,8 +1,6 @@
 using System;
 using System.Drawing;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Windows.Forms;
 using HWManager.Core.Models;
 using HWManager.Core.Services;
@@ -12,11 +10,22 @@ namespace HWManager.Client
     public partial class FocusModeForm : Form
     {
         private readonly CustomResourceManager _manager = new CustomResourceManager();
+        private readonly CustomResourceSettingsStore _settingsStore = new CustomResourceSettingsStore();
         private readonly HardwareMonitorService _monitor = new HardwareMonitorService();
         private readonly ProcessService _processService = new ProcessService();
         private readonly System.Windows.Forms.Timer _watchTimer = new System.Windows.Forms.Timer();
         private readonly System.Windows.Forms.Timer _recommendTimer = new System.Windows.Forms.Timer();
-        private static readonly string SettingsPath = Path.Combine(AppContext.BaseDirectory, "focus_mode_settings.json");
+        // 개인 설정 저장/불러오기 UI는 Designer가 아니라 런타임에 구성한다.
+        // 디자이너가 복잡한 TableLayoutPanel 설정을 자주 깨뜨려서, 의도한 크기/이벤트를 코드로 고정한다.
+        private GroupBox? _grpProfiles;
+        private TextBox? _txtProfileName;
+        private ComboBox? _cboProfiles;
+        private Button? _btnSaveProfile;
+        private Button? _btnLoadProfile;
+        private Button? _btnRefreshProfiles;
+        private Button? _btnDeleteProfile;
+        private Button? _btnExportCurrent;
+        private Button? _btnImportProfile;
         private bool _loadingSettings;
 
         public FocusModeForm()
@@ -31,7 +40,8 @@ namespace HWManager.Client
             BindManagerEvents();
             InitWatchTimer();
             InitRecommendTimer();
-            LoadSettingsFromJson();
+            LoadActiveSettings();
+            RefreshProfileList();
             LoadRecommendations();
         }
 
@@ -44,6 +54,7 @@ namespace HWManager.Client
             // DPI/폰트 배율이 다른 PC에서 버튼, 입력칸, 상태 라벨이 세로로 잘리는 문제를 방지한다.
             // Designer.cs의 절대 높이(60px 등)에만 의존하지 않고 런타임에 최소 높이를 보정한다.
             EnsureReadableRuntimeSizes();
+            ConfigureProfileLayout();
 
             grpThreshold.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
             grpKill.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
@@ -114,6 +125,143 @@ namespace HWManager.Client
             lvRecommend.View = View.Details;
         }
 
+        // 개인 설정 영역을 화면 최상단 전체 폭에 배치한다.
+        // 오른쪽 패널 안에 넣으면 추천/도움말과 공간을 나눠 글씨가 잘렸기 때문에,
+        // rootLayout을 2행 구조로 바꿔 상단은 저장/가져오기 전용, 하단은 기존 관리 UI로 사용한다.
+        private void ConfigureProfileLayout()
+        {
+            if (_grpProfiles != null)
+                return;
+
+            rootLayout.SuspendLayout();
+
+            // 상단 150px은 2줄짜리 프로필 UI가 DPI 125% 이상에서도 잘리지 않도록 확보한 고정 영역.
+            rootLayout.RowStyles.Clear();
+            rootLayout.RowCount = 2;
+            rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 150F));
+            rootLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            // 기존 좌/우 본문 레이아웃은 새로 추가한 두 번째 행으로 내린다.
+            rootLayout.SetColumn(settingsLayout, 0);
+            rootLayout.SetRow(settingsLayout, 1);
+            rootLayout.SetColumn(sideLayout, 1);
+            rootLayout.SetRow(sideLayout, 1);
+
+            _grpProfiles = new GroupBox
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("맑은 고딕", 9F, FontStyle.Bold),
+                Margin = new Padding(3, 3, 3, 6),
+                Text = "개인 설정 저장/불러오기"
+            };
+
+            // 2행 구성: 1행은 저장/내보내기, 2행은 불러오기/삭제/가져오기.
+            // 버튼 영역을 넓게 잡아 한글 버튼 텍스트가 DPI 배율에 따라 잘리는 문제를 방지한다.
+            var profileLayout = new TableLayoutPanel
+            {
+                ColumnCount = 3,
+                Dock = DockStyle.Fill,
+                Padding = new Padding(10, 8, 10, 8),
+                RowCount = 2
+            };
+            profileLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 88F));
+            profileLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            profileLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 620F));
+            profileLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+            profileLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+
+            var lblSaveName = CreateProfileLabel("저장 이름");
+            _txtProfileName = new TextBox
+            {
+                Anchor = AnchorStyles.Left | AnchorStyles.Right,
+                Font = new Font("맑은 고딕", 9F),
+                PlaceholderText = "예: 게임용, 작업용"
+            };
+            _btnSaveProfile = new Button();
+            SetupProfileButton(_btnSaveProfile, "현재 설정 저장", btnSaveProfile_Click);
+
+            var lblLoadName = CreateProfileLabel("저장 목록");
+            _cboProfiles = new ComboBox
+            {
+                Anchor = AnchorStyles.Left | AnchorStyles.Right,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new Font("맑은 고딕", 9F)
+            };
+            _btnLoadProfile = new Button();
+            _btnRefreshProfiles = new Button();
+            _btnDeleteProfile = new Button();
+            SetupProfileButton(_btnLoadProfile, "불러오기", btnLoadProfile_Click);
+            SetupProfileButton(_btnRefreshProfiles, "목록 새로고침", btnRefreshProfiles_Click);
+            SetupProfileButton(_btnDeleteProfile, "삭제", btnDeleteProfile_Click);
+
+            _btnExportCurrent = new Button();
+            _btnImportProfile = new Button();
+            SetupProfileButton(_btnExportCurrent, "현재 설정 내보내기", btnExportCurrent_Click);
+            SetupProfileButton(_btnImportProfile, "파일 가져오기", btnImportProfile_Click);
+
+            profileLayout.Controls.Add(lblSaveName, 0, 0);
+            profileLayout.Controls.Add(_txtProfileName, 1, 0);
+            profileLayout.Controls.Add(CreateButtonFlow(_btnSaveProfile, _btnExportCurrent), 2, 0);
+            profileLayout.Controls.Add(lblLoadName, 0, 1);
+            profileLayout.Controls.Add(_cboProfiles, 1, 1);
+            profileLayout.Controls.Add(CreateButtonFlow(_btnLoadProfile, _btnRefreshProfiles, _btnDeleteProfile, _btnImportProfile), 2, 1);
+
+            _grpProfiles.Controls.Add(profileLayout);
+            rootLayout.Controls.Add(_grpProfiles, 0, 0);
+            rootLayout.SetColumnSpan(_grpProfiles, 2);
+            rootLayout.ResumeLayout(false);
+        }
+
+        private static Label CreateProfileLabel(string text)
+        {
+            return new Label
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("맑은 고딕", 9F),
+                Text = text,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+        }
+
+        // 같은 셀에 여러 버튼을 가로로 놓기 위한 헬퍼.
+        // TableLayoutPanel에 버튼을 직접 여러 개 넣으면 AutoSize 계산이 흔들려 FlowLayoutPanel로 묶는다.
+        private static FlowLayoutPanel CreateButtonFlow(params Button[] buttons)
+        {
+            var flow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                Padding = new Padding(0),
+                Margin = new Padding(0),
+                WrapContents = false
+            };
+
+            foreach (Button button in buttons)
+                flow.Controls.Add(button);
+
+            return flow;
+        }
+
+        // 개인 설정 영역 전용 버튼 크기 보정.
+        // TextRenderer로 실제 한글 폭을 계산하고 여유 폭을 더해 다른 PC/DPI에서도 글씨가 잘리지 않게 한다.
+        private static void SetupProfileButton(Button btn, string text, EventHandler onClick)
+        {
+            var buttonFont = new Font("맑은 고딕", 8.5F, FontStyle.Bold);
+            Size textSize = TextRenderer.MeasureText(text, buttonFont);
+
+            btn.Text = text;
+            btn.Font = buttonFont;
+            btn.TextAlign = ContentAlignment.MiddleCenter;
+            btn.UseCompatibleTextRendering = true;
+            btn.AutoSize = false;
+            btn.MinimumSize = new Size(Math.Max(112, textSize.Width + 36), 40);
+            btn.Size = btn.MinimumSize;
+            btn.Margin = new Padding(4, 5, 4, 5);
+            btn.Padding = new Padding(10, 4, 10, 4);
+            btn.Click -= onClick;
+            btn.Click += onClick;
+        }
+
         private void EnsureReadableRuntimeSizes()
         {
             // 입력칸 + 버튼이 들어가는 하단 행은 60px로는 125%/150% 배율에서 글자가 잘릴 수 있다.
@@ -131,7 +279,7 @@ namespace HWManager.Client
             controlLayout.MinimumSize = new Size(0, 96);
 
             // 전체 창을 너무 작게 줄였을 때 글자가 먼저 잘리지 않고 스크롤이 생기도록 최소 크기를 조금 키운다.
-            MinimumSize = new Size(1200, 820);
+            MinimumSize = new Size(1280, 860);
         }
 
         private static void SetupThresholdLabel(Label lbl, string text)
@@ -211,8 +359,10 @@ namespace HWManager.Client
             {
                 btnAddKill, btnRemoveKill, btnPickFromProcesses,
                 btnAddTrigger, btnRemoveTrigger,
-                btnRefreshRecommend, btnAddRecommend
-            };
+                btnRefreshRecommend, btnAddRecommend,
+                _btnSaveProfile, _btnLoadProfile, _btnRefreshProfiles,
+                _btnDeleteProfile, _btnExportCurrent, _btnImportProfile
+            }.Where(btn => btn != null).Cast<Button>();
             foreach (var btn in buttons)
             {
                 btn.FlatStyle = FlatStyle.Flat;
@@ -322,84 +472,79 @@ namespace HWManager.Client
             _watchTimer.Tick += WatchTimer_Tick;
         }
 
-        private void LoadSettingsFromJson()
+        // 화면 최초 진입 시 마지막으로 사용하던 커스텀 자원 관리 설정을 복원한다.
+        // 실제 파일 접근/구버전 파일 호환 처리는 Core의 CustomResourceSettingsStore에 위임한다.
+        private void LoadActiveSettings()
         {
-            _loadingSettings = true;
-
             try
             {
-                FocusModeSettings settings = new FocusModeSettings();
-
-                if (File.Exists(SettingsPath))
-                {
-                    string json = File.ReadAllText(SettingsPath);
-                    settings = JsonSerializer.Deserialize<FocusModeSettings>(json) ?? new FocusModeSettings();
-                }
-
-                nudCpu.Value = ClampToNumericRange(nudCpu, settings.CpuThreshold);
-                nudRam.Value = ClampToNumericRange(nudRam, settings.RamThreshold);
-                nudGpu.Value = ClampToNumericRange(nudGpu, settings.GpuThreshold);
-
-                _manager.CpuThreshold = (float)nudCpu.Value;
-                _manager.RamThreshold = (float)nudRam.Value;
-                _manager.GpuThreshold = (float)nudGpu.Value;
-
-                lstKill.Items.Clear();
-                _manager.AutoKillTargets.Clear();
-                foreach (string name in settings.AutoKillTargets.Select(ProcessService.NormalizeName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase))
-                {
-                    lstKill.Items.Add(name);
-                    _manager.AutoKillTargets.Add(name);
-                }
-
-                lstTrigger.Items.Clear();
-                _manager.TriggerPrograms.Clear();
-                foreach (string name in settings.TriggerPrograms.Select(ProcessService.NormalizeName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase))
-                {
-                    lstTrigger.Items.Add(name);
-                    _manager.TriggerPrograms.Add(name);
-                }
-
-                UpdateThresholdSummary();
-
-                if (settings.Enabled && _manager.AutoKillTargets.Count > 0)
-                {
-                    chkEnable.Checked = true;
-                }
+                ApplySettingsToUi(_settingsStore.LoadActiveSettings());
             }
             catch (Exception ex)
             {
                 txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] 설정 로드 실패: {ex.Message}" + Environment.NewLine);
             }
-            finally
-            {
-                _loadingSettings = false;
-            }
         }
 
-        private void SaveSettingsToJson()
+        // 화면에서 값이 바뀔 때마다 현재 상태를 자동 저장한다.
+        // _loadingSettings 중에는 UI 값 세팅으로 ValueChanged가 발생하므로 중복 저장을 막는다.
+        private void SaveActiveSettings()
         {
             if (_loadingSettings)
                 return;
 
             try
             {
-                var settings = new FocusModeSettings
-                {
-                    CpuThreshold = (float)nudCpu.Value,
-                    RamThreshold = (float)nudRam.Value,
-                    GpuThreshold = (float)nudGpu.Value,
-                    Enabled = chkEnable.Checked,
-                    AutoKillTargets = _manager.AutoKillTargets.ToList(),
-                    TriggerPrograms = _manager.TriggerPrograms.ToList()
-                };
-
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                File.WriteAllText(SettingsPath, JsonSerializer.Serialize(settings, options));
+                _settingsStore.SaveActiveSettings(BuildCurrentSettings());
             }
             catch (Exception ex)
             {
                 txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] 설정 저장 실패: {ex.Message}" + Environment.NewLine);
+            }
+        }
+
+        // UI 컨트롤 값을 Manager에 먼저 동기화한 뒤 저장용 DTO로 만든다.
+        // 이렇게 하면 수동 입력/체크 상태와 Manager 내부 상태가 어긋나지 않는다.
+        private CustomResourceSettings BuildCurrentSettings(string? profileName = null)
+        {
+            _manager.CpuThreshold = (float)nudCpu.Value;
+            _manager.RamThreshold = (float)nudRam.Value;
+            _manager.GpuThreshold = (float)nudGpu.Value;
+            _manager.Enabled = chkEnable.Checked;
+            return _manager.CreateSettings(profileName);
+        }
+
+        // 저장된 설정을 UI와 Manager 양쪽에 동시에 반영한다.
+        // 자동 관리 활성화는 종료 대상이 있을 때만 복원해서 빈 목록 상태의 오동작을 막는다.
+        private void ApplySettingsToUi(CustomResourceSettings settings)
+        {
+            _loadingSettings = true;
+
+            try
+            {
+                _manager.ApplySettings(settings);
+
+                nudCpu.Value = ClampToNumericRange(nudCpu, _manager.CpuThreshold);
+                nudRam.Value = ClampToNumericRange(nudRam, _manager.RamThreshold);
+                nudGpu.Value = ClampToNumericRange(nudGpu, _manager.GpuThreshold);
+
+                lstKill.Items.Clear();
+                foreach (string name in _manager.AutoKillTargets)
+                    lstKill.Items.Add(name);
+
+                lstTrigger.Items.Clear();
+                foreach (string name in _manager.TriggerPrograms)
+                    lstTrigger.Items.Add(name);
+
+                UpdateThresholdSummary();
+
+                bool canEnable = settings.Enabled && _manager.AutoKillTargets.Count > 0;
+                chkEnable.Checked = canEnable;
+                _manager.Enabled = canEnable;
+            }
+            finally
+            {
+                _loadingSettings = false;
             }
         }
 
@@ -429,27 +574,184 @@ namespace HWManager.Client
         {
             _manager.CpuThreshold = (float)nudCpu.Value;
             UpdateThresholdSummary();
-            SaveSettingsToJson();
+            SaveActiveSettings();
         }
 
         private void nudRam_ValueChanged(object sender, EventArgs e)
         {
             _manager.RamThreshold = (float)nudRam.Value;
             UpdateThresholdSummary();
-            SaveSettingsToJson();
+            SaveActiveSettings();
         }
 
         private void nudGpu_ValueChanged(object sender, EventArgs e)
         {
             _manager.GpuThreshold = (float)nudGpu.Value;
             UpdateThresholdSummary();
-            SaveSettingsToJson();
+            SaveActiveSettings();
         }
 
         private void UpdateThresholdSummary()
         {
             lblThresholdSummary.Text =
                 $"설정된 임계값 | CPU {nudCpu.Value:F0}%  RAM {nudRam.Value:F0}%  GPU {nudGpu.Value:F0}%";
+        }
+
+        // 프로필 콤보박스를 디스크의 실제 JSON 파일 목록과 다시 맞춘다.
+        // 저장/삭제/가져오기 후에도 사용자가 보던 항목을 가능하면 다시 선택한다.
+        private void RefreshProfileList(string? selectName = null)
+        {
+            if (_cboProfiles == null)
+                return;
+
+            string? current = selectName ?? _cboProfiles.SelectedItem as string;
+            var names = _settingsStore.GetProfileNames();
+
+            _cboProfiles.BeginUpdate();
+            _cboProfiles.Items.Clear();
+            foreach (string name in names)
+                _cboProfiles.Items.Add(name);
+            _cboProfiles.EndUpdate();
+
+            if (!string.IsNullOrWhiteSpace(current) && names.Contains(current, StringComparer.OrdinalIgnoreCase))
+                _cboProfiles.SelectedItem = names.First(name => string.Equals(name, current, StringComparison.OrdinalIgnoreCase));
+            else if (_cboProfiles.Items.Count > 0)
+                _cboProfiles.SelectedIndex = 0;
+        }
+
+        // 현재 화면 설정을 이름 있는 개인 설정으로 보관한다.
+        // 이후 목록에서 선택해 불러오거나 다른 PC로 내보낼 수 있다.
+        private void btnSaveProfile_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                string profileName = _settingsStore.SaveProfile(_txtProfileName?.Text ?? string.Empty, BuildCurrentSettings());
+                RefreshProfileList(profileName);
+                if (_txtProfileName != null)
+                    _txtProfileName.Text = profileName;
+                txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] 개인 설정 '{profileName}' 저장" + Environment.NewLine);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "개인 설정 저장 실패", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        // 목록에서 선택한 개인 설정을 현재 화면에 적용하고 활성 설정으로도 저장한다.
+        // 창을 닫았다가 열어도 방금 불러온 설정이 유지되도록 하기 위함이다.
+        private void btnLoadProfile_Click(object? sender, EventArgs e)
+        {
+            if (_cboProfiles?.SelectedItem is not string profileName)
+            {
+                MessageBox.Show(this, "불러올 개인 설정을 선택해 주세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                CustomResourceSettings settings = _settingsStore.LoadProfile(profileName);
+                ApplySettingsToUi(settings);
+                SaveActiveSettings();
+                if (_txtProfileName != null)
+                    _txtProfileName.Text = settings.ProfileName;
+                txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] 개인 설정 '{profileName}' 불러오기" + Environment.NewLine);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "개인 설정 불러오기 실패", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void btnRefreshProfiles_Click(object? sender, EventArgs e) => RefreshProfileList();
+
+        // 목록에서 더 이상 필요 없는 개인 설정 파일을 삭제한다.
+        // 실수로 지우는 것을 막기 위해 삭제 전 확인 메시지를 띄운다.
+        private void btnDeleteProfile_Click(object? sender, EventArgs e)
+        {
+            if (_cboProfiles?.SelectedItem is not string profileName)
+            {
+                MessageBox.Show(this, "삭제할 개인 설정을 선택해 주세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(this,
+                $"개인 설정 '{profileName}'을(를) 삭제할까요?",
+                "개인 설정 삭제",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result != DialogResult.Yes)
+                return;
+
+            try
+            {
+                _settingsStore.DeleteProfile(profileName);
+                RefreshProfileList();
+                txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] 개인 설정 '{profileName}' 삭제" + Environment.NewLine);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "개인 설정 삭제 실패", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        // 현재 설정을 사용자가 지정한 JSON 파일로 내보낸다.
+        // 이 파일을 USB/메신저 등으로 다른 PC에 옮긴 뒤 '파일 가져오기'로 복원할 수 있다.
+        private void btnExportCurrent_Click(object? sender, EventArgs e)
+        {
+            using var dialog = new SaveFileDialog
+            {
+                AddExtension = true,
+                DefaultExt = "json",
+                FileName = "custom_resource_settings.json",
+                Filter = "JSON 설정 파일 (*.json)|*.json|모든 파일 (*.*)|*.*",
+                Title = "커스텀 자원 관리 설정 내보내기"
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                string profileName = string.IsNullOrWhiteSpace(_txtProfileName?.Text) ? "" : _txtProfileName.Text.Trim();
+                _settingsStore.ExportSettings(BuildCurrentSettings(profileName), dialog.FileName, profileName);
+                txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] 설정 파일 내보내기 완료: {dialog.FileName}" + Environment.NewLine);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "설정 내보내기 실패", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        // 다른 PC에서 가져온 JSON 설정 파일을 개인 설정으로 등록하고 즉시 현재 화면에 적용한다.
+        // 가져온 뒤 활성 설정도 저장해서 다음 실행 때도 동일한 값이 유지된다.
+        private void btnImportProfile_Click(object? sender, EventArgs e)
+        {
+            using var dialog = new OpenFileDialog
+            {
+                CheckFileExists = true,
+                Filter = "JSON 설정 파일 (*.json)|*.json|모든 파일 (*.*)|*.*",
+                Title = "커스텀 자원 관리 설정 가져오기"
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                string profileName = _settingsStore.ImportProfile(dialog.FileName);
+                CustomResourceSettings settings = _settingsStore.LoadProfile(profileName);
+                ApplySettingsToUi(settings);
+                SaveActiveSettings();
+                RefreshProfileList(profileName);
+                if (_txtProfileName != null)
+                    _txtProfileName.Text = profileName;
+                txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] 설정 파일 가져오기 완료: {profileName}" + Environment.NewLine);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "설정 가져오기 실패", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
 
         private void btnAddKill_Click(object sender, EventArgs e)
@@ -461,7 +763,7 @@ namespace HWManager.Client
             lstKill.Items.Add(name);
             _manager.AutoKillTargets.Add(name);
             txtKillInput.Clear();
-            SaveSettingsToJson();
+            SaveActiveSettings();
         }
 
         private void btnRemoveKill_Click(object sender, EventArgs e)
@@ -470,7 +772,7 @@ namespace HWManager.Client
             {
                 lstKill.Items.Remove(selected);
                 _manager.AutoKillTargets.Remove(selected);
-                SaveSettingsToJson();
+                SaveActiveSettings();
             }
         }
 
@@ -484,7 +786,7 @@ namespace HWManager.Client
                 {
                     lstKill.Items.Add(name);
                     _manager.AutoKillTargets.Add(name);
-                    SaveSettingsToJson();
+                    SaveActiveSettings();
                 }
             }
         }
@@ -498,7 +800,7 @@ namespace HWManager.Client
             lstTrigger.Items.Add(name);
             _manager.TriggerPrograms.Add(name);
             txtTriggerInput.Clear();
-            SaveSettingsToJson();
+            SaveActiveSettings();
         }
 
         private void btnRemoveTrigger_Click(object sender, EventArgs e)
@@ -507,7 +809,7 @@ namespace HWManager.Client
             {
                 lstTrigger.Items.Remove(selected);
                 _manager.TriggerPrograms.Remove(selected);
-                SaveSettingsToJson();
+                SaveActiveSettings();
             }
         }
 
@@ -537,7 +839,7 @@ namespace HWManager.Client
                 txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] 자동 관리 중지" + Environment.NewLine);
             }
 
-            SaveSettingsToJson();
+            SaveActiveSettings();
         }
 
         // --- 자동 종료 추천 ---
@@ -606,7 +908,7 @@ namespace HWManager.Client
 
             if (added > 0)
             {
-                SaveSettingsToJson();
+                SaveActiveSettings();
                 txtLog.AppendText(
                     $"[{DateTime.Now:HH:mm:ss}] 추천 목록에서 {added}개 대상 추가" + Environment.NewLine);
             }
@@ -614,7 +916,7 @@ namespace HWManager.Client
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            SaveSettingsToJson();
+            SaveActiveSettings();
             _watchTimer.Stop();
             _recommendTimer.Stop();
             _monitor.Dispose();
