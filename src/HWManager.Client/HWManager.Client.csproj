@@ -9,6 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!--
+      EmbeddedWebMonitorService가 WinForms 프로세스 안에서 ASP.NET Core minimal API(Kestrel)를 실행하기 위해 필요하다.
+      패키지 참조가 아니라 FrameworkReference를 쓰면 현재 설치된 ASP.NET Core 공유 프레임워크를 사용한다.
+    -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
     <PackageReference Include="ScottPlot.WinForms" Version="5.1.58" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.2" />

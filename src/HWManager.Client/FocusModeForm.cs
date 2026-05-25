@@ -1,5 +1,8 @@
 using System;
 using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
 using System.Windows.Forms;
 using HWManager.Core.Models;
 using HWManager.Core.Services;
@@ -13,6 +16,8 @@ namespace HWManager.Client
         private readonly ProcessService _processService = new ProcessService();
         private readonly System.Windows.Forms.Timer _watchTimer = new System.Windows.Forms.Timer();
         private readonly System.Windows.Forms.Timer _recommendTimer = new System.Windows.Forms.Timer();
+        private static readonly string SettingsPath = Path.Combine(AppContext.BaseDirectory, "focus_mode_settings.json");
+        private bool _loadingSettings;
 
         public FocusModeForm()
         {
@@ -26,6 +31,7 @@ namespace HWManager.Client
             BindManagerEvents();
             InitWatchTimer();
             InitRecommendTimer();
+            LoadSettingsFromJson();
             LoadRecommendations();
         }
 
@@ -34,6 +40,10 @@ namespace HWManager.Client
         private void ConfigureRuntimeLayout()
         {
             rootLayout.AutoScroll = true;
+
+            // DPI/폰트 배율이 다른 PC에서 버튼, 입력칸, 상태 라벨이 세로로 잘리는 문제를 방지한다.
+            // Designer.cs의 절대 높이(60px 등)에만 의존하지 않고 런타임에 최소 높이를 보정한다.
+            EnsureReadableRuntimeSizes();
 
             grpThreshold.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
             grpKill.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
@@ -62,7 +72,7 @@ namespace HWManager.Client
 
             // 입력 상자
             SetupInput(txtKillInput, "프로세스 이름 (예: chrome)");
-            SetupInput(txtTriggerInput, "트리거 프로그램 (예: valorant)");
+            SetupInput(txtTriggerInput, "트리거 프로그램 (예: notion)");
 
             // ListBox — Dock/Font 복구
             SetupListBox(lstKill);
@@ -91,8 +101,8 @@ namespace HWManager.Client
             // 다른 버튼들은 AutoSize 로 텍스트만큼만 차지하고, 이 버튼만 Dock=Fill 로 전환.
             btnAddRecommend.AutoSize = false;
             btnAddRecommend.Dock = DockStyle.Fill;
-            btnAddRecommend.MinimumSize = new Size(0, 34);
-            btnAddRecommend.Margin = new Padding(3, 6, 3, 6);
+            btnAddRecommend.MinimumSize = new Size(260, 44);
+            btnAddRecommend.Margin = new Padding(3, 8, 3, 8);
 
             // ListView 컬럼 헤더 Text 가 유지되는지 방어
             colRecName.Text = "프로세스 이름";
@@ -102,6 +112,26 @@ namespace HWManager.Client
             lvRecommend.FullRowSelect = true;
             lvRecommend.MultiSelect = true;
             lvRecommend.View = View.Details;
+        }
+
+        private void EnsureReadableRuntimeSizes()
+        {
+            // 입력칸 + 버튼이 들어가는 하단 행은 60px로는 125%/150% 배율에서 글자가 잘릴 수 있다.
+            // 버튼 높이 44px + 위/아래 Margin을 안정적으로 수용하도록 82px로 넉넉하게 확보한다.
+            if (killLayout.RowStyles.Count > 1)
+                killLayout.RowStyles[1] = new RowStyle(SizeType.Absolute, 82F);
+
+            if (triggerLayout.RowStyles.Count > 1)
+                triggerLayout.RowStyles[1] = new RowStyle(SizeType.Absolute, 82F);
+
+            if (recommendLayout.RowStyles.Count > 1)
+                recommendLayout.RowStyles[1] = new RowStyle(SizeType.Absolute, 82F);
+
+            // 활성화 체크/상태 표시 영역도 두 줄이 들어가므로 최소 높이를 보장한다.
+            controlLayout.MinimumSize = new Size(0, 96);
+
+            // 전체 창을 너무 작게 줄였을 때 글자가 먼저 잘리지 않고 스크롤이 생기도록 최소 크기를 조금 키운다.
+            MinimumSize = new Size(1200, 820);
         }
 
         private static void SetupThresholdLabel(Label lbl, string text)
@@ -152,12 +182,23 @@ namespace HWManager.Client
         // 세로는 부모 행이 60px 절대값이므로 Dock=Fill 로 셀을 가득 채워 가운데 정렬 효과.
         private void SetupButton(Button btn, string text, EventHandler onClick)
         {
+            var buttonFont = new Font("맑은 고딕", 9F, FontStyle.Bold);
+
             btn.Text = text;
-            btn.AutoSize = true;
-            btn.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            btn.MinimumSize = new Size(75, 34);
-            btn.Padding = new Padding(12, 4, 12, 4);
-            btn.Margin = new Padding(3, 6, 3, 6);
+            btn.Font = buttonFont;
+            btn.TextAlign = ContentAlignment.MiddleCenter;
+            btn.UseCompatibleTextRendering = true;
+
+            // AutoSize에 맡기면 DPI 배율/한글 렌더링 차이 때문에 버튼 내부 글자가 잘리는 경우가 있다.
+            // 그래서 텍스트 폭을 직접 계산하고 여유 폭을 크게 더한 뒤 고정 크기로 배치한다.
+            btn.AutoSize = false;
+            Size textSize = TextRenderer.MeasureText(text, buttonFont);
+            int width = Math.Max(92, textSize.Width + 56);
+            btn.MinimumSize = new Size(width, 44);
+            btn.Size = new Size(width, 44);
+            btn.Padding = new Padding(14, 6, 14, 6);
+            btn.Margin = new Padding(3, 8, 3, 8);
+
             btn.Click -= onClick;
             btn.Click += onClick;
         }
@@ -178,7 +219,9 @@ namespace HWManager.Client
                 btn.FlatAppearance.BorderSize = 0;
                 btn.BackColor = Color.White;
                 btn.Cursor = Cursors.Hand;
-                btn.Font = new Font("맑은 고딕", 9, FontStyle.Bold);
+                btn.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
+                btn.TextAlign = ContentAlignment.MiddleCenter;
+                btn.UseCompatibleTextRendering = true;
                 btn.MouseEnter += (s, e) => btn.BackColor = Color.FromArgb(235, 235, 235);
                 btn.MouseLeave += (s, e) => btn.BackColor = Color.White;
             }
@@ -279,6 +322,95 @@ namespace HWManager.Client
             _watchTimer.Tick += WatchTimer_Tick;
         }
 
+        private void LoadSettingsFromJson()
+        {
+            _loadingSettings = true;
+
+            try
+            {
+                FocusModeSettings settings = new FocusModeSettings();
+
+                if (File.Exists(SettingsPath))
+                {
+                    string json = File.ReadAllText(SettingsPath);
+                    settings = JsonSerializer.Deserialize<FocusModeSettings>(json) ?? new FocusModeSettings();
+                }
+
+                nudCpu.Value = ClampToNumericRange(nudCpu, settings.CpuThreshold);
+                nudRam.Value = ClampToNumericRange(nudRam, settings.RamThreshold);
+                nudGpu.Value = ClampToNumericRange(nudGpu, settings.GpuThreshold);
+
+                _manager.CpuThreshold = (float)nudCpu.Value;
+                _manager.RamThreshold = (float)nudRam.Value;
+                _manager.GpuThreshold = (float)nudGpu.Value;
+
+                lstKill.Items.Clear();
+                _manager.AutoKillTargets.Clear();
+                foreach (string name in settings.AutoKillTargets.Select(ProcessService.NormalizeName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase))
+                {
+                    lstKill.Items.Add(name);
+                    _manager.AutoKillTargets.Add(name);
+                }
+
+                lstTrigger.Items.Clear();
+                _manager.TriggerPrograms.Clear();
+                foreach (string name in settings.TriggerPrograms.Select(ProcessService.NormalizeName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase))
+                {
+                    lstTrigger.Items.Add(name);
+                    _manager.TriggerPrograms.Add(name);
+                }
+
+                UpdateThresholdSummary();
+
+                if (settings.Enabled && _manager.AutoKillTargets.Count > 0)
+                {
+                    chkEnable.Checked = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] 설정 로드 실패: {ex.Message}" + Environment.NewLine);
+            }
+            finally
+            {
+                _loadingSettings = false;
+            }
+        }
+
+        private void SaveSettingsToJson()
+        {
+            if (_loadingSettings)
+                return;
+
+            try
+            {
+                var settings = new FocusModeSettings
+                {
+                    CpuThreshold = (float)nudCpu.Value,
+                    RamThreshold = (float)nudRam.Value,
+                    GpuThreshold = (float)nudGpu.Value,
+                    Enabled = chkEnable.Checked,
+                    AutoKillTargets = _manager.AutoKillTargets.ToList(),
+                    TriggerPrograms = _manager.TriggerPrograms.ToList()
+                };
+
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                File.WriteAllText(SettingsPath, JsonSerializer.Serialize(settings, options));
+            }
+            catch (Exception ex)
+            {
+                txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] 설정 저장 실패: {ex.Message}" + Environment.NewLine);
+            }
+        }
+
+        private static decimal ClampToNumericRange(NumericUpDown nud, float value)
+        {
+            decimal decimalValue = (decimal)value;
+            if (decimalValue < nud.Minimum) return nud.Minimum;
+            if (decimalValue > nud.Maximum) return nud.Maximum;
+            return decimalValue;
+        }
+
         private void WatchTimer_Tick(object? sender, EventArgs e)
         {
             try
@@ -297,18 +429,21 @@ namespace HWManager.Client
         {
             _manager.CpuThreshold = (float)nudCpu.Value;
             UpdateThresholdSummary();
+            SaveSettingsToJson();
         }
 
         private void nudRam_ValueChanged(object sender, EventArgs e)
         {
             _manager.RamThreshold = (float)nudRam.Value;
             UpdateThresholdSummary();
+            SaveSettingsToJson();
         }
 
         private void nudGpu_ValueChanged(object sender, EventArgs e)
         {
             _manager.GpuThreshold = (float)nudGpu.Value;
             UpdateThresholdSummary();
+            SaveSettingsToJson();
         }
 
         private void UpdateThresholdSummary()
@@ -326,6 +461,7 @@ namespace HWManager.Client
             lstKill.Items.Add(name);
             _manager.AutoKillTargets.Add(name);
             txtKillInput.Clear();
+            SaveSettingsToJson();
         }
 
         private void btnRemoveKill_Click(object sender, EventArgs e)
@@ -334,6 +470,7 @@ namespace HWManager.Client
             {
                 lstKill.Items.Remove(selected);
                 _manager.AutoKillTargets.Remove(selected);
+                SaveSettingsToJson();
             }
         }
 
@@ -347,6 +484,7 @@ namespace HWManager.Client
                 {
                     lstKill.Items.Add(name);
                     _manager.AutoKillTargets.Add(name);
+                    SaveSettingsToJson();
                 }
             }
         }
@@ -360,6 +498,7 @@ namespace HWManager.Client
             lstTrigger.Items.Add(name);
             _manager.TriggerPrograms.Add(name);
             txtTriggerInput.Clear();
+            SaveSettingsToJson();
         }
 
         private void btnRemoveTrigger_Click(object sender, EventArgs e)
@@ -368,6 +507,7 @@ namespace HWManager.Client
             {
                 lstTrigger.Items.Remove(selected);
                 _manager.TriggerPrograms.Remove(selected);
+                SaveSettingsToJson();
             }
         }
 
@@ -396,6 +536,8 @@ namespace HWManager.Client
                 lblState.ForeColor = Color.DimGray;
                 txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] 자동 관리 중지" + Environment.NewLine);
             }
+
+            SaveSettingsToJson();
         }
 
         // --- 자동 종료 추천 ---
@@ -464,6 +606,7 @@ namespace HWManager.Client
 
             if (added > 0)
             {
+                SaveSettingsToJson();
                 txtLog.AppendText(
                     $"[{DateTime.Now:HH:mm:ss}] 추천 목록에서 {added}개 대상 추가" + Environment.NewLine);
             }
@@ -471,6 +614,7 @@ namespace HWManager.Client
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            SaveSettingsToJson();
             _watchTimer.Stop();
             _recommendTimer.Stop();
             _monitor.Dispose();
