@@ -174,12 +174,34 @@ namespace HWManager.Client
         {
             dbLogTimer?.Stop();
             _monitorService?.Dispose();
-            base.OnFormClosing(e);
-            
-            _overlayTimer?.Stop(); // 오버레이 리소스 해제 추가
+            base.OnFormClosing(e); 
+            _overlayTimer?.Stop(); // 오버레이 리소스 해제
             _overlayService?.HideOverlay();
         }
 
+        /// <summary>
+        /// 오버레이 구동에 필요한 1초 주기 타이머를 세팅하고 SQLite DB에서 최종 설정값을 복원.
+        /// </summary>
+        private void InitOverlayTimer()
+        {
+            _overlayTimer = new System.Timers.Timer();
+            _overlayTimer.Interval = 1000; // 1초 주기 세팅
+            _overlayTimer.Elapsed += OverlayTimer_Elapsed;
+
+            // SQLite DB에서 마지막 On/Off 상태 및 시각 수치 로드
+            IsOverlayEnabled = DatabaseHelper.LoadOverlaySettings();
+            DatabaseHelper.LoadOverlayVisuals(out double opacity, out double scale);
+
+            OverlayOpacity = opacity;
+            OverlayScale = scale;
+
+            // 로드 완료된 상태를 실시간 런타임에 최초 반영
+            ApplyOverlaySettings();
+        }
+
+        /// <summary>
+        /// 오버레이 활성화 상태에 따라 실시간 타이머 및 창을 제어하고 시각 수치(투명도, 크기)를 반영.
+        /// </summary>
         public void ApplyOverlaySettings()
         {
             if (IsOverlayEnabled)
@@ -187,6 +209,7 @@ namespace HWManager.Client
                 _overlayTimer?.Start();
                 _overlayService?.ShowOverlay();
 
+                // 중계 인터페이스를 구체 클래스로 캐스팅하여 WPF 창 내부 속성 원격 제어
                 var service = _overlayService as OverlayService;
                 service?.SetOpacity(OverlayOpacity);
                 service?.SetScale(OverlayScale);
@@ -198,35 +221,20 @@ namespace HWManager.Client
             }
         }
 
-        // 백그라운드 타이머 초기화
-        private void InitOverlayTimer()
-        {
-            _overlayTimer = new System.Timers.Timer();
-            _overlayTimer.Interval = 1000;
-            _overlayTimer.Elapsed += OverlayTimer_Elapsed;
-
-            // on/off 상태 최초 로드
-            IsOverlayEnabled = DatabaseHelper.LoadOverlaySettings();
-
-            // 세부 수치 따로 로드
-            DatabaseHelper.LoadOverlayVisuals(out double opacity, out double scale);
-            OverlayOpacity = opacity;
-            OverlayScale = scale;
-
-            ApplyOverlaySettings();
-        }
-
+        // 1초 백그라운드 타이머 주기마다 백엔드 센서 값을 수집하여 WPF 오버레이 화면으로 밀어주는 핵심 루틴
         private void OverlayTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
             try
             {
+                // 하드웨어 모니터링 서비스 엔진으로부터 실시간 리소스 규격 데이터 수집
                 SystemSnapshot snapshot = _monitorService.GetCurrentStatus();
 
                 if (snapshot != null)
                 {
-                    // 디버그 창에 실제 수집된 숫자가 찍히는지 확인
+                    // 비주얼 스튜디오 출력(Output) 창에서 실시간 데이터 매핑 여부를 검증하기 위한 추적 로그
                     System.Diagnostics.Trace.WriteLine($"[데이터 확인] CPU: {snapshot.CpuUsage}%, RAM: {snapshot.RamUsage}%, GPU: {snapshot.GpuUsage}%");
 
+                    // 가공된 스냅샷 뭉치를 WPF 오버레이 레이어로 전송하여 화면 UI 갱신
                     _overlayService.UpdateHardwareData(snapshot);
                 }
             }

@@ -8,6 +8,10 @@ using System.Windows.Threading;
 
 namespace HWManager.Overlay
 {
+    /// <summary>
+    /// 화면 최상단에 상주하는 하드웨어 가속 반투명 오버레이 창의 비하인드 코드
+    /// 마우스 관통(유령화), 디스플레이 배율 대응 휠 드래그 이동 및 가변 스케일링을 연산
+    /// </summary>
     public partial class MainWindow : Window
     {
         private const int GWL_EXSTYLE = -20;
@@ -15,11 +19,11 @@ namespace HWManager.Overlay
         private double _initWidth = 420;
         private double _initHeight = 50;
 
-        // 프로그램 켜져 있는 동안 위치를 킵해둘 정적 변수
+        // 온오프 토글 시 창 위치 유실 버그를 방지하기 위해 프로그램 가동 동안 위치를 유지하는 정적 변수
         private static double _lastX = -1;
         private static double _lastY = -1;
 
-
+        // Win32 OS 전역 마우스 관통 스타일 및 키 상태 조회를 위한 로우 레벨 API 인터페이스
         [DllImport("user32.dll")]
         private static extern int GetWindowLong(IntPtr hwnd, int nIndex);
 
@@ -32,7 +36,6 @@ namespace HWManager.Overlay
         [DllImport("user32.dll")]
         private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
-        // 윈도우 전역 키 상태를 직접 조회하는 API
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int vKey);
 
@@ -76,6 +79,7 @@ namespace HWManager.Overlay
             _ghostTimer.Start();
         }
 
+        // 0.1초마다 글로벌 마우스 및 Shift 상태 감시하여 유령화 토글
         private void GhostTimer_Tick(object? sender, EventArgs e)
         {
             if (!IsLoaded) return;
@@ -91,11 +95,11 @@ namespace HWManager.Overlay
             // 창 포커스와 무관하게 윈도우 전역 Shift 키 실시간 감지 (0x10 = VK_SHIFT)
             bool isShiftDown = (GetAsyncKeyState(0x10) & 0x8000) != 0;
 
-            // 물리 화면 기준 좌표 내에 마우스가 들어왔는지 검사
+            // 마우스 포인터가 오버레이 물리 영역 내부에 진입했는지 검사
             bool isMouseOver = mousePos.X >= windowRect.Left && mousePos.X <= windowRect.Right &&
                                mousePos.Y >= windowRect.Top && mousePos.Y <= windowRect.Bottom;
 
-            // 마우스가 창 위에 있고 Shift를 누르면 실체화
+            // 마우스가 창 위에 있고 Shift를 누르면 실체화(조작 가능)
             if (isMouseOver && isShiftDown)
             {
                 SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT); // 관통 해제
@@ -117,7 +121,7 @@ namespace HWManager.Overlay
             }
         }
 
-        // 휠 드래그 중 윈도우 화면 배율(DPI)을 완벽하게 계산하여 이동
+        // 휠 드래그 중 윈도우 디스플레이 배율(DPI) 변동 오차를 정밀 연산하여 이동 처리
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
             if (this.IsMouseCaptured && e.MiddleButton == MouseButtonState.Pressed)
@@ -149,6 +153,7 @@ namespace HWManager.Overlay
             }
         }
 
+        // WinForms 백엔드 교량에서 밀어준 스냅샷 원시 데이터를 UI 스레드 안전 구역(Dispatcher)에서 비동기 반영
         public void UpdateData(float cpu, double ram, float gpu)
         {
             Dispatcher.Invoke(() =>
@@ -163,6 +168,7 @@ namespace HWManager.Overlay
             });
         }
 
+        // 가변 스케일링 슬라이더 연동 제어 함수 (컨텐츠 벡터 배율 및 창 외곽 크기 동시 처리)
         public void SetScale(double scale)
         {
             Dispatcher.Invoke(() =>

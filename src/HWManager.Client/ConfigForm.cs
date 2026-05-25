@@ -10,6 +10,8 @@ namespace HWManager.Client
         private AlertSettings _alertSettings;
         private bool _overlayEnabled;
         private MainForm _mainForm;
+
+        // 설정창 취소시 원상복구하기 위한 백업 변수들
         private bool _originalOverlayEnabled;
         private double _originalOpacity;
         private double _originalScale;
@@ -64,6 +66,7 @@ namespace HWManager.Client
                 chkEnableAlert.Checked = _alertSettings.IsEnabled;
                 chkEnableOverlay.Checked = _overlayEnabled;
 
+                // 창이 열릴 때의 오버레이 상태를 백업하고 슬라이더 초기 위치 설정
                 if (_mainForm != null)
                 {
                     _originalOverlayEnabled = _mainForm.IsOverlayEnabled;
@@ -97,7 +100,7 @@ namespace HWManager.Client
 
                 SaveSettings();
 
-                // MainForm의 AlertService 업데이트
+                // MainForm의 AlertService, Overlay 업데이트
                 if (_mainForm != null)
                 {
                     _mainForm.RefreshAlertSettings();
@@ -158,7 +161,7 @@ namespace HWManager.Client
             DatabaseHelper.SaveAlertSettings(_alertSettings);
             DatabaseHelper.SaveOverlaySettings(_overlayEnabled);
 
-            // 투명도, 크기도 함께 저장
+            // 오버레이 투명도, 크기도 함께 저장
             if (_mainForm != null)
             {
                 DatabaseHelper.SaveOverlayVisuals(_mainForm.OverlayOpacity, _mainForm.OverlayScale);
@@ -181,6 +184,7 @@ namespace HWManager.Client
             base.OnFormClosing(e);
         }
 
+        // 투명도 슬라이더 드래그 시 메인창 변수 변경 및 즉시 실시간 프리뷰 반영
         private void tbOpacity_Scroll(object sender, EventArgs e)
         {
             if (_mainForm != null)
@@ -193,15 +197,17 @@ namespace HWManager.Client
             }
         }
 
+        // 크기 배율 슬라이더 드래그 시 메인창 변수 변경 및 즉시 실시간 프리뷰 반영
         private void tbScale_Scroll(object sender, EventArgs e)
         {
             if (_mainForm != null)
             {
                 _mainForm.OverlayScale = tbScale.Value / 10.0;
                 _mainForm.ApplyOverlaySettings(); // 즉시 반영
-            }
+            } 
         }
 
+        // 오버레이 체크박스 토글 시 화면에 즉시 켜짐/꺼짐 프리뷰 반영
         private void chkEnableOverlay_CheckedChanged(object sender, EventArgs e)
         {
             if (_mainForm != null)
