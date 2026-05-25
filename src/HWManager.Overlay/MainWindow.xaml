@@ -1,0 +1,46 @@
+﻿<Window x:Class="HWManager.Overlay.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="HWManager Overlay" Height="50" Width="420"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False"
+        MouseDown="Window_MouseDown" MouseMove="Window_MouseMove" MouseUp="Window_MouseUp">
+    <Border Background="#E61A1A1A" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="6" Padding="15,0">
+        <Grid>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+
+                <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="10,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="CPU" Foreground="#FF64DFDF" FontSize="11" FontWeight="Bold" Margin="0,0,8,0"/>
+                        <TextBlock x:Name="txtCpu" Text="0.0%" Foreground="#FFFFFFFF" FontSize="12" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <ProgressBar x:Name="progressCpu" Value="0" Minimum="0" Maximum="100" Width="90" Height="3" 
+                                 Background="#22FFFFFF" Foreground="#FF64DFDF" BorderThickness="0"/>
+                </StackPanel>
+
+                <Border Width="1" Height="20" Background="#22FFFFFF" Margin="8,0"/>
+
+                <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="10,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="RAM" Foreground="#FFB497FF" FontSize="11" FontWeight="Bold" Margin="0,0,8,0"/>
+                        <TextBlock x:Name="txtRam" Text="0.0%" Foreground="#FFFFFFFF" FontSize="12" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <ProgressBar x:Name="progressRam" Value="0" Minimum="0" Maximum="100" Width="90" Height="3" 
+                                 Background="#22FFFFFF" Foreground="#FFB497FF" BorderThickness="0"/>
+                </StackPanel>
+
+                <Border Width="1" Height="20" Background="#22FFFFFF" Margin="8,0"/>
+
+                <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="10,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="GPU" Foreground="#FFFCA311" FontSize="11" FontWeight="Bold" Margin="0,0,8,0"/>
+                        <TextBlock x:Name="txtGpu" Text="0.0%" Foreground="#FFFFFFFF" FontSize="12" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <ProgressBar x:Name="progressGpu" Value="0" Minimum="0" Maximum="100" Width="90" Height="3" 
+                                 Background="#22FFFFFF" Foreground="#FFFCA311" BorderThickness="0"/>
+                </StackPanel>
+
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

@@ -27,6 +27,7 @@ namespace HWManager.Client
             dgvProcessLog.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
         }
 
+        // 현재 구동 중인 모든 프로세스를 가져와 메모리 점유율이 높은 순으로 정렬
         private void LoadProcesses()
         {
             try
@@ -40,6 +41,7 @@ namespace HWManager.Client
             }
         }
 
+        // 검색 필터링 및 바이트 단위를 MB로 변환하여 리스트뷰에 갱신
         private void UpdateProcessList(string filter)
         {
             lvProcesses.BeginUpdate();
@@ -54,27 +56,28 @@ namespace HWManager.Client
                     item.SubItems.Add($"{(p.WorkingSet64 / 1024 / 1024):N0} MB");
                     lvProcesses.Items.Add(item);
                 }
-                catch { continue; }
+                catch { continue; } // 시스템 보안상 접근 거부된 프로세스는 패스
             }
             lvProcesses.EndUpdate();
             lblSummary.Text = $"검색 결과: {filtered.Count}개 / 전체: {_allProcesses.Count}개";
         }
 
+        // 목록 수동 새로고침
         private void btnRefresh_Click(object sender, EventArgs e) => LoadProcesses();
 
+        // 선택한 프로세스명을 기준으로 동일 이름을 가진 모든 프로세스 일괄 강제 종료
         private void btnKill_Click(object sender, EventArgs e)
         {
             if (lvProcesses.SelectedItems.Count > 0)
             {
                 try
                 {
-                    // [수정] PID(SubItems[1]) 대신 프로세스 이름(Text)을 가져옵니다.
                     string procName = lvProcesses.SelectedItems[0].Text;
 
                     if (MessageBox.Show($"{procName}와(과) 관련된 모든 프로세스를 종료하시겠습니까?",
                         "강제 종료", MessageBoxButtons.YesNo) == DialogResult.Yes)
                     {
-                        // 서비스의 새로운 '이름 기반 종료' 함수 호출
+                        // 서비스 레이어의 이름 기반 종료 함수 호출
                         if (_processService.KillProcessesByName(procName))
                         {
                             MessageBox.Show("종료 명령을 전송했습니다.");
@@ -93,6 +96,7 @@ namespace HWManager.Client
             }
         }
 
+        // 검색창 입력 내용 변경 시 실시간 리스트 갱신
         private void textBox1_TextChanged(object sender, EventArgs e) => UpdateProcessList(txtSearch.Text);
 
     }

@@ -5,7 +5,7 @@ namespace HWManager.Client
 {
     public partial class MonitorForm : Form
     {
-        // 서비스 및 스트리머 선언
+        // 하드웨어 모니터링 백엔드 서비스 및 실시간 차트 스트리머 객체
         private HardwareMonitorService _monitorService = new HardwareMonitorService();
         private ScottPlot.Plottables.DataStreamer cpuStreamer;
         private ScottPlot.Plottables.DataStreamer ramStreamer;
@@ -29,11 +29,12 @@ namespace HWManager.Client
             dgvHardwareLog.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
 
+        // CPU 실시간 차트 초기화 (60초 분량 스크롤, 청색 선)
         private void InitPlotCPU()
         {
             cpuStreamer = formsPlotCPU.Plot.Add.DataStreamer(60);
-            cpuStreamer.ViewScrollLeft();
-            for (int i = 0; i < 60; i++) cpuStreamer.Add(0);
+            cpuStreamer.ViewScrollLeft(); // 왼쪽으로 밀리는 스크롤 연출
+            for (int i = 0; i < 60; i++) cpuStreamer.Add(0); // 초기 데이터 0으로 채움
 
             double[] tickPositions = { 0, 10, 20, 30, 40, 50, 60 };
             string[] tickLabels = { "60", "50", "40", "30", "20", "10", "0" };
@@ -42,10 +43,11 @@ namespace HWManager.Client
 
             cpuStreamer.Color = ScottPlot.Color.FromColor(Color.Blue);
             cpuStreamer.LineWidth = 2;
-            formsPlotCPU.Plot.Axes.SetLimits(0, 60, 0, 100);
+            formsPlotCPU.Plot.Axes.SetLimits(0, 60, 0, 100); // Y축 범위 0 ~ 100% 고정
             formsPlotCPU.Refresh();
         }
 
+        // RAM 실시간 차트 초기화 (60초 분량 스크롤, 녹색 선)
         private void InitPlotRAM()
         {
             ramStreamer = formsPlotRAM.Plot.Add.DataStreamer(60);
@@ -66,6 +68,7 @@ namespace HWManager.Client
             formsPlotRAM.Refresh();
         }
 
+        // GPU 실시간 차트 초기화 (60초 분량 스크롤, 주황 선)
         private void InitPlotGPU()
         {
             gpuStreamer = formsPlotGPU.Plot.Add.DataStreamer(60);
@@ -86,24 +89,26 @@ namespace HWManager.Client
             formsPlotGPU.Refresh();
         }
 
+        // 타이머 주기(예: 1초)마다 백엔드 센서 데이터를 읽어 차트와 UI 동시 반영
         private void timer1_Tick(object sender, EventArgs e)
         {
             try
             {
-                // 서비스에서 데이터 뭉치 가져오기
+                // 백엔드 서비스로부터 표준 데이터 스냅샷 수집
                 SystemSnapshot snapshot = _monitorService.GetCurrentStatus();
 
-                // 차트 업데이트
+                // 차트 스트리머에 새 데이터 포인트 추가 및 그래프 새로고침
                 if (cpuStreamer != null) { cpuStreamer.Add(snapshot.CpuUsage); formsPlotCPU.Refresh(); }
                 if (ramStreamer != null) { ramStreamer.Add(snapshot.RamUsage); formsPlotRAM.Refresh(); }
                 if (gpuStreamer != null) { gpuStreamer.Add(snapshot.GpuUsage); formsPlotGPU.Refresh(); }
 
-                // UI 업데이트
+                // 프로그레스 바 및 텍스트 정보 업데이트
                 UpdateDisplay(snapshot);
             }
             catch { }
         }
 
+        // 프로그레스 바 수치 매핑 및 텍스트 레이블 문자열 포맷팅
         private void UpdateDisplay(SystemSnapshot s)
         {
             pbCPU.Value = (int)Math.Min(s.CpuUsage, 100);
@@ -115,10 +120,11 @@ namespace HWManager.Client
             lblGPU.Text = $"GPU 사용량: {s.GpuUsage:F1}%";
         }
 
+        // 폼이 닫힐 때 백그라운드 타이머를 중지하고 센서 서비스 자원을 안전하게 해제
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             timer1.Stop();
-            _monitorService.Dispose();
+            _monitorService.Dispose(); // 오브젝트 메모리 누수 방지
             base.OnFormClosing(e);
         }
     }

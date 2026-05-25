@@ -35,7 +35,12 @@ namespace HWManager.Client
             nudAlertInterval = new NumericUpDown();
             lblAlertIntervalUnit = new Label();
             grpOverlay = new GroupBox();
+            tableLayoutOverlay = new TableLayoutPanel();
+            tbScale = new TrackBar();
             chkEnableOverlay = new CheckBox();
+            tbOpacity = new TrackBar();
+            lblOpacity = new Label();
+            lblScale = new Label();
             tableLayoutPanelButtons = new TableLayoutPanel();
             btnSave = new Button();
             btnCancel = new Button();
@@ -48,6 +53,9 @@ namespace HWManager.Client
             ((System.ComponentModel.ISupportInitialize)nudAlertGpu).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nudAlertInterval).BeginInit();
             grpOverlay.SuspendLayout();
+            tableLayoutOverlay.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)tbScale).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)tbOpacity).BeginInit();
             tableLayoutPanelButtons.SuspendLayout();
             SuspendLayout();
             // 
@@ -75,9 +83,10 @@ namespace HWManager.Client
             tableLayoutPanelMain.Location = new Point(15, 15);
             tableLayoutPanelMain.Margin = new Padding(0);
             tableLayoutPanelMain.Name = "tableLayoutPanelMain";
-            tableLayoutPanelMain.RowCount = 2;
+            tableLayoutPanelMain.RowCount = 3;
             tableLayoutPanelMain.RowStyles.Add(new RowStyle());
             tableLayoutPanelMain.RowStyles.Add(new RowStyle());
+            tableLayoutPanelMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanelMain.Size = new Size(670, 470);
             tableLayoutPanelMain.TabIndex = 0;
             // 
@@ -92,7 +101,7 @@ namespace HWManager.Client
             grpAlert.Margin = new Padding(0, 0, 0, 15);
             grpAlert.Name = "grpAlert";
             grpAlert.Padding = new Padding(10);
-            grpAlert.Size = new Size(670, 230);
+            grpAlert.Size = new Size(670, 226);
             grpAlert.TabIndex = 0;
             grpAlert.TabStop = false;
             grpAlert.Text = "알림 설정";
@@ -120,7 +129,7 @@ namespace HWManager.Client
             tableLayoutAlert.Controls.Add(nudAlertInterval, 1, 4);
             tableLayoutAlert.Controls.Add(lblAlertIntervalUnit, 2, 4);
             tableLayoutAlert.Dock = DockStyle.Fill;
-            tableLayoutAlert.Location = new Point(10, 30);
+            tableLayoutAlert.Location = new Point(10, 26);
             tableLayoutAlert.Margin = new Padding(0);
             tableLayoutAlert.Name = "tableLayoutAlert";
             tableLayoutAlert.RowCount = 5;
@@ -167,7 +176,7 @@ namespace HWManager.Client
             nudAlertCpu.Location = new Point(123, 33);
             nudAlertCpu.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             nudAlertCpu.Name = "nudAlertCpu";
-            nudAlertCpu.Size = new Size(74, 27);
+            nudAlertCpu.Size = new Size(74, 23);
             nudAlertCpu.TabIndex = 1;
             nudAlertCpu.TextAlign = HorizontalAlignment.Right;
             nudAlertCpu.Value = new decimal(new int[] { 90, 0, 0, 0 });
@@ -204,7 +213,7 @@ namespace HWManager.Client
             nudAlertRam.Location = new Point(123, 73);
             nudAlertRam.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             nudAlertRam.Name = "nudAlertRam";
-            nudAlertRam.Size = new Size(74, 27);
+            nudAlertRam.Size = new Size(74, 23);
             nudAlertRam.TabIndex = 2;
             nudAlertRam.TextAlign = HorizontalAlignment.Right;
             nudAlertRam.Value = new decimal(new int[] { 90, 0, 0, 0 });
@@ -241,7 +250,7 @@ namespace HWManager.Client
             nudAlertGpu.Location = new Point(123, 113);
             nudAlertGpu.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             nudAlertGpu.Name = "nudAlertGpu";
-            nudAlertGpu.Size = new Size(74, 27);
+            nudAlertGpu.Size = new Size(74, 23);
             nudAlertGpu.TabIndex = 3;
             nudAlertGpu.TextAlign = HorizontalAlignment.Right;
             nudAlertGpu.Value = new decimal(new int[] { 90, 0, 0, 0 });
@@ -279,7 +288,7 @@ namespace HWManager.Client
             nudAlertInterval.Maximum = new decimal(new int[] { 999999, 0, 0, 0 });
             nudAlertInterval.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             nudAlertInterval.Name = "nudAlertInterval";
-            nudAlertInterval.Size = new Size(74, 27);
+            nudAlertInterval.Size = new Size(74, 23);
             nudAlertInterval.TabIndex = 4;
             nudAlertInterval.TextAlign = HorizontalAlignment.Right;
             nudAlertInterval.Value = new decimal(new int[] { 60, 0, 0, 0 });
@@ -298,31 +307,97 @@ namespace HWManager.Client
             // 
             // grpOverlay
             // 
-            grpOverlay.AutoSize = true;
             grpOverlay.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            grpOverlay.Controls.Add(chkEnableOverlay);
+            grpOverlay.Controls.Add(tableLayoutOverlay);
             grpOverlay.Dock = DockStyle.Top;
             grpOverlay.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
-            grpOverlay.Location = new Point(0, 245);
+            grpOverlay.Location = new Point(0, 241);
             grpOverlay.Margin = new Padding(0, 0, 0, 15);
             grpOverlay.Name = "grpOverlay";
             grpOverlay.Padding = new Padding(10);
-            grpOverlay.Size = new Size(670, 64);
+            grpOverlay.Size = new Size(670, 135);
             grpOverlay.TabIndex = 1;
             grpOverlay.TabStop = false;
             grpOverlay.Text = "오버레이";
             // 
+            // tableLayoutOverlay
+            // 
+            tableLayoutOverlay.ColumnCount = 2;
+            tableLayoutOverlay.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 8.615385F));
+            tableLayoutOverlay.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 91.38461F));
+            tableLayoutOverlay.Controls.Add(tbScale, 1, 2);
+            tableLayoutOverlay.Controls.Add(chkEnableOverlay, 0, 0);
+            tableLayoutOverlay.Controls.Add(tbOpacity, 1, 1);
+            tableLayoutOverlay.Controls.Add(lblOpacity, 0, 1);
+            tableLayoutOverlay.Controls.Add(lblScale, 0, 2);
+            tableLayoutOverlay.Dock = DockStyle.Fill;
+            tableLayoutOverlay.Location = new Point(10, 26);
+            tableLayoutOverlay.Name = "tableLayoutOverlay";
+            tableLayoutOverlay.RowCount = 3;
+            tableLayoutOverlay.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
+            tableLayoutOverlay.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
+            tableLayoutOverlay.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
+            tableLayoutOverlay.Size = new Size(650, 99);
+            tableLayoutOverlay.TabIndex = 2;
+            // 
+            // tbScale
+            // 
+            tbScale.Dock = DockStyle.Fill;
+            tbScale.Location = new Point(59, 67);
+            tbScale.Maximum = 15;
+            tbScale.Minimum = 5;
+            tbScale.Name = "tbScale";
+            tbScale.Size = new Size(588, 29);
+            tbScale.TabIndex = 9;
+            tbScale.Value = 10;
+            tbScale.Scroll += tbScale_Scroll;
+            // 
             // chkEnableOverlay
             // 
             chkEnableOverlay.AutoSize = true;
-            chkEnableOverlay.Dock = DockStyle.Fill;
+            tableLayoutOverlay.SetColumnSpan(chkEnableOverlay, 2);
+            chkEnableOverlay.Dock = DockStyle.Left;
             chkEnableOverlay.Font = new Font("맑은 고딕", 9F);
-            chkEnableOverlay.Location = new Point(10, 30);
+            chkEnableOverlay.Location = new Point(3, 3);
             chkEnableOverlay.Name = "chkEnableOverlay";
-            chkEnableOverlay.Size = new Size(650, 24);
+            chkEnableOverlay.Size = new Size(142, 26);
             chkEnableOverlay.TabIndex = 5;
             chkEnableOverlay.Text = "오버레이 기능 활성화";
             chkEnableOverlay.UseVisualStyleBackColor = true;
+            chkEnableOverlay.CheckedChanged += chkEnableOverlay_CheckedChanged;
+            // 
+            // tbOpacity
+            // 
+            tbOpacity.Dock = DockStyle.Fill;
+            tbOpacity.Location = new Point(59, 35);
+            tbOpacity.Minimum = 2;
+            tbOpacity.Name = "tbOpacity";
+            tbOpacity.Size = new Size(588, 26);
+            tbOpacity.TabIndex = 7;
+            tbOpacity.Value = 8;
+            tbOpacity.Scroll += tbOpacity_Scroll;
+            // 
+            // lblOpacity
+            // 
+            lblOpacity.AutoSize = true;
+            lblOpacity.Dock = DockStyle.Fill;
+            lblOpacity.Location = new Point(3, 32);
+            lblOpacity.Name = "lblOpacity";
+            lblOpacity.Size = new Size(50, 32);
+            lblOpacity.TabIndex = 6;
+            lblOpacity.Text = "투명도";
+            lblOpacity.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // lblScale
+            // 
+            lblScale.AutoSize = true;
+            lblScale.Dock = DockStyle.Fill;
+            lblScale.Location = new Point(3, 64);
+            lblScale.Name = "lblScale";
+            lblScale.Size = new Size(50, 35);
+            lblScale.TabIndex = 8;
+            lblScale.Text = "크기";
+            lblScale.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // tableLayoutPanelButtons
             // 
@@ -372,7 +447,7 @@ namespace HWManager.Client
             // 
             // ConfigForm
             // 
-            AutoScaleDimensions = new SizeF(9F, 20F);
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
             ClientSize = new Size(700, 560);
@@ -399,7 +474,10 @@ namespace HWManager.Client
             ((System.ComponentModel.ISupportInitialize)nudAlertGpu).EndInit();
             ((System.ComponentModel.ISupportInitialize)nudAlertInterval).EndInit();
             grpOverlay.ResumeLayout(false);
-            grpOverlay.PerformLayout();
+            tableLayoutOverlay.ResumeLayout(false);
+            tableLayoutOverlay.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)tbScale).EndInit();
+            ((System.ComponentModel.ISupportInitialize)tbOpacity).EndInit();
             tableLayoutPanelButtons.ResumeLayout(false);
             ResumeLayout(false);
         }
@@ -428,5 +506,10 @@ namespace HWManager.Client
         private Label lblAlertIntervalUnit;
         private GroupBox grpOverlay;
         private CheckBox chkEnableOverlay;
+        private TrackBar tbOpacity;
+        private Label lblOpacity;
+        private TableLayoutPanel tableLayoutOverlay;
+        private TrackBar tbScale;
+        private Label lblScale;
     }
 }

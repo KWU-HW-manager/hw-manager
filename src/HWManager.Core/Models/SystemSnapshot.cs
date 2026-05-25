@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace HWManager.Core.Models
 {
+    // 시스템 전체 자원(CPU, RAM, GPU)의 실시간 사용량 메트릭 표준 데이터 모델
+
     public class SystemSnapshot
     {
         public float CpuUsage { get; set; }     // CPU 사용량 (%)

@@ -11,6 +11,11 @@ namespace HWManager.Client
         private bool _overlayEnabled;
         private MainForm _mainForm;
 
+        // 설정창 취소시 원상복구하기 위한 백업 변수들
+        private bool _originalOverlayEnabled;
+        private double _originalOpacity;
+        private double _originalScale;
+
         public ConfigForm(MainForm mainForm = null)
         {
             InitializeComponent();
@@ -33,11 +38,11 @@ namespace HWManager.Client
                 btn.FlatStyle = FlatStyle.Flat;
                 btn.FlatAppearance.BorderSize = 0;
                 btn.Cursor = Cursors.Hand;
-                btn.MouseEnter += (s, e) => btn.BackColor = btn == btnSave 
-                    ? Color.FromArgb(65, 105, 165) 
+                btn.MouseEnter += (s, e) => btn.BackColor = btn == btnSave
+                    ? Color.FromArgb(65, 105, 165)
                     : Color.FromArgb(200, 200, 200);
-                btn.MouseLeave += (s, e) => btn.BackColor = btn == btnSave 
-                    ? Color.FromArgb(79, 129, 189) 
+                btn.MouseLeave += (s, e) => btn.BackColor = btn == btnSave
+                    ? Color.FromArgb(79, 129, 189)
                     : Color.LightGray;
             }
         }
@@ -51,7 +56,7 @@ namespace HWManager.Client
             {
                 // 데이터베이스에서 설정값 로드
                 _alertSettings = DatabaseHelper.LoadAlertSettings();
-                _overlayEnabled = false; // TODO: 오버레이 설정도 DB에서 로드
+                _overlayEnabled = DatabaseHelper.LoadOverlaySettings();
 
                 // UI에 값 반영
                 nudAlertCpu.Value = (decimal)_alertSettings.CpuThreshold;
@@ -60,10 +65,20 @@ namespace HWManager.Client
                 nudAlertInterval.Value = _alertSettings.AlertInterval;
                 chkEnableAlert.Checked = _alertSettings.IsEnabled;
                 chkEnableOverlay.Checked = _overlayEnabled;
+
+                // 창이 열릴 때의 오버레이 상태를 백업하고 슬라이더 초기 위치 설정
+                if (_mainForm != null)
+                {
+                    _originalOverlayEnabled = _mainForm.IsOverlayEnabled;
+                    _originalOpacity = _mainForm.OverlayOpacity;
+                    _originalScale = _mainForm.OverlayScale;
+                    tbOpacity.Value = (int)(_mainForm.OverlayOpacity * 10);
+                    tbScale.Value = (int)(_mainForm.OverlayScale * 10);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"설정 로드 중 오류가 발생했습니다: {ex.Message}", "오류", 
+                MessageBox.Show($"설정 로드 중 오류가 발생했습니다: {ex.Message}", "오류",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -85,10 +100,11 @@ namespace HWManager.Client
 
                 SaveSettings();
 
-                // MainForm의 AlertService 업데이트
+                // MainForm의 AlertService, Overlay 업데이트
                 if (_mainForm != null)
                 {
                     _mainForm.RefreshAlertSettings();
+                    _mainForm.ApplyOverlaySettings();
                 }
 
                 MessageBox.Show("설정이 저장되었습니다.", "저장 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -97,7 +113,7 @@ namespace HWManager.Client
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"설정 저장 중 오류가 발생했습니다: {ex.Message}", "오류", 
+                MessageBox.Show($"설정 저장 중 오류가 발생했습니다: {ex.Message}", "오류",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -107,8 +123,18 @@ namespace HWManager.Client
         /// </summary>
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            if (_mainForm != null)
+            {
+                // 백업해뒀던 처음 값으로 원상복구
+                _mainForm.IsOverlayEnabled = _originalOverlayEnabled;
+                _mainForm.OverlayOpacity = _originalOpacity;
+                _mainForm.OverlayScale = _originalScale;
+
+                // 원상복구된 값을 오버레이에 즉시 반영
+                _mainForm.ApplyOverlaySettings();
+            }
             this.DialogResult = DialogResult.Cancel;
-            this.Close();
+            this.Close(); ;
         }
 
         /// <summary>
@@ -133,6 +159,13 @@ namespace HWManager.Client
         private void SaveSettings()
         {
             DatabaseHelper.SaveAlertSettings(_alertSettings);
+            DatabaseHelper.SaveOverlaySettings(_overlayEnabled);
+
+            // 오버레이 투명도, 크기도 함께 저장
+            if (_mainForm != null)
+            {
+                DatabaseHelper.SaveOverlayVisuals(_mainForm.OverlayOpacity, _mainForm.OverlayScale);
+            }
         }
 
         /// <summary>
@@ -149,6 +182,40 @@ namespace HWManager.Client
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             base.OnFormClosing(e);
+        }
+
+        // 투명도 슬라이더 드래그 시 메인창 변수 변경 및 즉시 실시간 프리뷰 반영
+        private void tbOpacity_Scroll(object sender, EventArgs e)
+        {
+            if (_mainForm != null)
+            {
+                // 슬라이더 값(2~10)을 소수점(0.2~1.0)으로 변환합니다.
+                _mainForm.OverlayOpacity = tbOpacity.Value / 10.0;
+
+                // 메인창에 오버레이 상태를 즉시 갱신하라고 명령합니다.
+                _mainForm.ApplyOverlaySettings();
+            }
+        }
+
+        // 크기 배율 슬라이더 드래그 시 메인창 변수 변경 및 즉시 실시간 프리뷰 반영
+        private void tbScale_Scroll(object sender, EventArgs e)
+        {
+            if (_mainForm != null)
+            {
+                _mainForm.OverlayScale = tbScale.Value / 10.0;
+                _mainForm.ApplyOverlaySettings(); // 즉시 반영
+            } 
+        }
+
+        // 오버레이 체크박스 토글 시 화면에 즉시 켜짐/꺼짐 프리뷰 반영
+        private void chkEnableOverlay_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_mainForm != null)
+            {
+                // 체크박스 상태를 메인창 변수에 실시간 동기화 후 즉시 반영
+                _mainForm.IsOverlayEnabled = chkEnableOverlay.Checked;
+                _mainForm.ApplyOverlaySettings();
+            }
         }
     }
 }

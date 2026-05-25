@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HWManager.Core\HWManager.Core.csproj" />
+    <ProjectReference Include="..\HWManager.Overlay\HWManager.Overlay.csproj" />
   </ItemGroup>
 
 </Project>

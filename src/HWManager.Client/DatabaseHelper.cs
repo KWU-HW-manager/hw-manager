@@ -16,7 +16,7 @@ namespace HWManager.Client
         {
             using (var conn = new SQLiteConnection(connString))
             {
-                conn.Open();
+                conn.Open(); 
                 
                 // Logs 테이블
                 string sqlLogs = @"CREATE TABLE IF NOT EXISTS Logs (
@@ -653,6 +653,113 @@ namespace HWManager.Client
         {
             public string Name { get; set; } = "";
             public int MemoryMb { get; set; }
+        }
+
+        // 오버레이 활성화 상태(On/Off)를 Settings 테이블에 영구 저장
+        public static void SaveOverlaySettings(bool enabled)
+        {
+            try
+            {
+                using (var conn = new SQLiteConnection(connString))
+                {
+                    conn.Open();
+                    // 기존 값이 있으면 덮어쓰고 없으면 삽입
+                    string sql = "INSERT OR REPLACE INTO Settings (Key, Value) VALUES ('OverlaySettings_IsEnabled', @value)";
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@value", enabled.ToString());
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch { } // 데이터베이스 파일 잠금 등으로 인한 런타임 크래시 방지용 예외 차단
+        }
+
+        // 저장된 오버레이의 마지막 On/Off 활성화 상태를 조회 (프로그램 시작 시 복원용)
+        public static bool LoadOverlaySettings()
+        {
+            try
+            {
+                using (var conn = new SQLiteConnection(connString))
+                {
+                    conn.Open();
+                    string sql = "SELECT Value FROM Settings WHERE Key = 'OverlaySettings_IsEnabled'";
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    {
+                        var result = cmd.ExecuteScalar();
+                        if (result != null && bool.TryParse(result.ToString(), out bool isEnabled))
+                        {
+                            return isEnabled;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return false; // DB가 비어있거나 첫 실행으로 인해 설정값이 없는 경우의 안전한 기본값(꺼짐)
+        }
+
+        // 확정된 오버레이 시각 설정(투명도, 크기)을 트랜잭션으로 안전하게 일괄 저장.
+        public static void SaveOverlayVisuals(double opacity, double scale)
+        {
+            try
+            {
+                using (var conn = new SQLiteConnection(connString))
+                {
+                    conn.Open();
+                    using (var trans = conn.BeginTransaction())
+                    {
+                        string sql = "INSERT OR REPLACE INTO Settings (Key, Value) VALUES (@key, @value)";
+                        using (var cmd = new SQLiteCommand(sql, conn, trans))
+                        {
+                            // 투명도 데이터 Upsert 실행
+                            cmd.Parameters.AddWithValue("@key", "OverlaySettings_Opacity");
+                            cmd.Parameters.AddWithValue("@value", opacity.ToString());
+                            cmd.ExecuteNonQuery();
+
+                            // 명령 파라미터를 비우고 크기 데이터 Upsert 실행
+                            cmd.Parameters.Clear();
+                            cmd.Parameters.AddWithValue("@key", "OverlaySettings_Scale");
+                            cmd.Parameters.AddWithValue("@value", scale.ToString());
+                            cmd.ExecuteNonQuery();
+                        }
+                        trans.Commit(); // 두 쿼리가 모두 성공한 시점에 디스크에 최종 박제
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // 오버레이 창 초기 생성 시 적용할 투명도와 크기 배율 데이터를 동시 로드
+        public static void LoadOverlayVisuals(out double opacity, out double scale)
+        {
+            // DB 조회 실패 또는 데이터 유실 시 프로그램이 터지지 않도록 방어용 디폴트값 우선 지정
+            opacity = 0.8;
+            scale = 1.0;
+
+            try
+            {
+                using (var conn = new SQLiteConnection(connString))
+                {
+                    conn.Open();
+                    // IN 절을 사용하여 두 개의 키 값을 일괄 조회
+                    string sql = "SELECT Key, Value FROM Settings WHERE Key IN ('OverlaySettings_Opacity', 'OverlaySettings_Scale')";
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string key = reader["Key"].ToString();
+                            string val = reader["Value"].ToString();
+
+                            // 읽어온 키 이름에 맞춰 out 매개변수에 실수형으로 파싱하여 주입
+                            if (key == "OverlaySettings_Opacity" && double.TryParse(val, out double op)) opacity = op;
+                            if (key == "OverlaySettings_Scale" && double.TryParse(val, out double sc)) scale = sc;
+                        }
+                    }
+                }
+            }
+            catch { }
         }
     }
 }
