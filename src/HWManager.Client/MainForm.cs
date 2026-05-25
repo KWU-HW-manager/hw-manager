@@ -16,12 +16,13 @@ namespace HWManager.Client
         private AlertService _alertService;
         private System.Windows.Forms.Timer? dbLogTimer;
         private Dictionary<string, DateTime> _lastAlertTime = new Dictionary<string, DateTime>();
+
         // 오버레이 서비스 및 타이머 변수 추가
-        private readonly IOverlayService _overlayService = new OverlayService();
-        private System.Timers.Timer? _overlayTimer;
-        public bool IsOverlayEnabled = false; // 오버레이 실시간 On/Off 상태
-        public double OverlayOpacity = 0.8; // 오버레이 투명도 기본값
-        public double OverlayScale = 1.0; // 오버레이 크기 기본값 (1.0 = 100%)
+        private readonly IOverlayService _overlayService = new OverlayService(); //WPF 오버레이 제어용 중계 서비스
+        private System.Timers.Timer? _overlayTimer; // 오버레이 데이터 실시간 갱신용 백그라운드 타ㅣ엄
+        public bool IsOverlayEnabled = false; // 오버레이 활성화 상태 (실시간 토글 제어용)
+        public double OverlayOpacity = 0.8; // 오버레이 반투명도 수치 (0.0 ~ 1.0)
+        public double OverlayScale = 1.0; // // 오버레이 UI 전체 크기 배율 (1.0 = 100%)
 
         public MainForm()
         {
@@ -30,62 +31,6 @@ namespace HWManager.Client
             InitAlertService();
             InitDbLogTimer();
             InitOverlayTimer();
-        }
-
-        public void ApplyOverlaySettings()
-        {
-            if (IsOverlayEnabled)
-            {
-                _overlayTimer?.Start();
-                _overlayService?.ShowOverlay();
-
-                var service = _overlayService as OverlayService;
-                service?.SetOpacity(OverlayOpacity);
-                service?.SetScale(OverlayScale);
-            }
-            else
-            {
-                _overlayTimer?.Stop();
-                _overlayService?.HideOverlay();
-            }
-        }
-
-        // 백그라운드 타이머 초기화
-        private void InitOverlayTimer()
-        {
-            _overlayTimer = new System.Timers.Timer();
-            _overlayTimer.Interval = 1000;
-            _overlayTimer.Elapsed += OverlayTimer_Elapsed;
-
-            // on/off 상태 최초 로드
-            IsOverlayEnabled = DatabaseHelper.LoadOverlaySettings();
-
-            // 세부 수치 따로 로드
-            DatabaseHelper.LoadOverlayVisuals(out double opacity, out double scale);
-            OverlayOpacity = opacity;
-            OverlayScale = scale;
-
-            ApplyOverlaySettings();
-        }
-
-        private void OverlayTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
-        {
-            try
-            {
-                SystemSnapshot snapshot = _monitorService.GetCurrentStatus();
-
-                if (snapshot != null)
-                {
-                    // 디버그 창에 실제 수집된 숫자가 찍히는지 확인
-                    System.Diagnostics.Trace.WriteLine($"[데이터 확인] CPU: {snapshot.CpuUsage}%, RAM: {snapshot.RamUsage}%, GPU: {snapshot.GpuUsage}%");
-
-                    _overlayService.UpdateHardwareData(snapshot);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Trace.WriteLine($"오버레이 오류: {ex.Message}");
-            }
         }
 
         private void InitAlertService()
@@ -181,12 +126,18 @@ namespace HWManager.Client
             DatabaseHelper.SaveAlertLog(record.ResourceType, record.UsagePercentage, record.Details);
         }
 
+        // ==========================================
+        // [초기화 및 스타일 메서드]
+        // ==========================================
         private void ApplyModernStyle()
         {
             this.BackColor = Color.FromArgb(243, 243, 243);
             this.Font = new Font("맑은 고딕", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 129);
         }
 
+        // ==========================================
+        // [UI 컨트롤러 클릭 이벤트]
+        // ==========================================
         private void btnMonitor_Click(object? sender, EventArgs e)
         {
             MonitorForm monitor = new MonitorForm();
@@ -224,9 +175,65 @@ namespace HWManager.Client
             dbLogTimer?.Stop();
             _monitorService?.Dispose();
             base.OnFormClosing(e);
-            // 오버레이 리소스 해제 추가
-            _overlayTimer?.Stop();
+            
+            _overlayTimer?.Stop(); // 오버레이 리소스 해제 추가
             _overlayService?.HideOverlay();
+        }
+
+        public void ApplyOverlaySettings()
+        {
+            if (IsOverlayEnabled)
+            {
+                _overlayTimer?.Start();
+                _overlayService?.ShowOverlay();
+
+                var service = _overlayService as OverlayService;
+                service?.SetOpacity(OverlayOpacity);
+                service?.SetScale(OverlayScale);
+            }
+            else
+            {
+                _overlayTimer?.Stop();
+                _overlayService?.HideOverlay();
+            }
+        }
+
+        // 백그라운드 타이머 초기화
+        private void InitOverlayTimer()
+        {
+            _overlayTimer = new System.Timers.Timer();
+            _overlayTimer.Interval = 1000;
+            _overlayTimer.Elapsed += OverlayTimer_Elapsed;
+
+            // on/off 상태 최초 로드
+            IsOverlayEnabled = DatabaseHelper.LoadOverlaySettings();
+
+            // 세부 수치 따로 로드
+            DatabaseHelper.LoadOverlayVisuals(out double opacity, out double scale);
+            OverlayOpacity = opacity;
+            OverlayScale = scale;
+
+            ApplyOverlaySettings();
+        }
+
+        private void OverlayTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            try
+            {
+                SystemSnapshot snapshot = _monitorService.GetCurrentStatus();
+
+                if (snapshot != null)
+                {
+                    // 디버그 창에 실제 수집된 숫자가 찍히는지 확인
+                    System.Diagnostics.Trace.WriteLine($"[데이터 확인] CPU: {snapshot.CpuUsage}%, RAM: {snapshot.RamUsage}%, GPU: {snapshot.GpuUsage}%");
+
+                    _overlayService.UpdateHardwareData(snapshot);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"오버레이 오류: {ex.Message}");
+            }
         }
     }
 }
