@@ -36,6 +36,40 @@ namespace HWManager.Core.Services
 
         private readonly ProcessService _processService = new ProcessService();
 
+        // UI/저장소가 현재 런타임 상태를 파일로 저장할 수 있도록 DTO로 복사한다.
+        // Manager 자체를 직렬화하지 않는 이유는 이벤트, 서비스 객체 등 저장하면 안 되는 상태가 섞여 있기 때문이다.
+        public CustomResourceSettings CreateSettings(string? profileName = null)
+        {
+            return new CustomResourceSettings
+            {
+                ProfileName = profileName ?? string.Empty,
+                CpuThreshold = CpuThreshold,
+                RamThreshold = RamThreshold,
+                GpuThreshold = GpuThreshold,
+                Enabled = Enabled,
+                AutoKillTargets = AutoKillTargets.ToList(),
+                TriggerPrograms = TriggerPrograms.ToList()
+            };
+        }
+
+        // 저장된 설정을 런타임 Manager 상태에 반영한다.
+        // 리스트 값은 파일/다른 PC에서 온 값일 수 있으므로 프로세스 이름을 정규화하고 중복을 제거한다.
+        public void ApplySettings(CustomResourceSettings settings)
+        {
+            CpuThreshold = settings.CpuThreshold;
+            RamThreshold = settings.RamThreshold;
+            GpuThreshold = settings.GpuThreshold;
+            Enabled = settings.Enabled;
+
+            AutoKillTargets.Clear();
+            foreach (string name in settings.AutoKillTargets.Select(ProcessService.NormalizeName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase))
+                AutoKillTargets.Add(name);
+
+            TriggerPrograms.Clear();
+            foreach (string name in settings.TriggerPrograms.Select(ProcessService.NormalizeName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase))
+                TriggerPrograms.Add(name);
+        }
+
         // Tick 한 번 = 조건 평가 한 번
         // 호출자 쪽에서 Timer로 주기적으로 호출해 준다.
         public void Evaluate(SystemSnapshot snapshot)
