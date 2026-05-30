@@ -241,6 +241,7 @@ namespace HWManager.Client
             dgvAlertResource = CreateGrid();
             plotAlert = new ScottPlot.WinForms.FormsPlot();
             plotAlert.Dock = DockStyle.Fill;
+            plotAlert.Plot.Font.Set("맑은 고딕");
 
             rightSplit.Panel1.Controls.Add(dgvAlertResource);
             rightSplit.Panel2.Controls.Add(plotAlert);
@@ -414,6 +415,9 @@ namespace HWManager.Client
             if (dt.Rows.Count == 0)
             {
                 plotAlert.Plot.Title("조회된 알림 로그가 없습니다.");
+                plotAlert.Plot.Axes.Title.Label.FontSize = 13;
+                plotAlert.Plot.Font.Set("맑은 고딕");
+
                 plotAlert.Refresh();
                 return;
             }
@@ -488,6 +492,12 @@ namespace HWManager.Client
             grid.AllowUserToAddRows = false;
             grid.AllowUserToDeleteRows = false;
             grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+            grid.Font = new Font("맑은 고딕", 9F);
+            grid.ColumnHeadersDefaultCellStyle.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
+            grid.DefaultCellStyle.Font = new Font("맑은 고딕", 9F);
+            grid.RowHeadersDefaultCellStyle.Font = new Font("맑은 고딕", 9F);
+
             return grid;
         }
 
